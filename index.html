@@ -3,13 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 6.2</title>
+    <title>CBL 專業打譜器 7.0</title>
     <style>
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; text-align: center; background: #f4f6f8; margin: 0; padding: 10px; }
         h3 { color: #333; margin: 5px 0; font-size: 18px; }
         
-        .file-upload { margin: 5px auto 15px auto; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 340px; }
+        .file-upload { margin: 5px auto 10px auto; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 340px; }
         input[type="file"] { font-size: 16px; width: 100%; }
+
+        /* 新增：下拉式目錄選單 */
+        .game-selector {
+            width: 100%; max-width: 320px; margin: 5px auto; padding: 8px 12px;
+            font-size: 16px; /* 16px 可防止 iOS 點擊時畫面自動放大 */
+            border-radius: 6px; border: 1px solid #aaa; background: #fff;
+            color: #333; font-weight: bold; cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: none; /* 檔案載入前先隱藏 */
+        }
+        .game-selector:focus { outline: none; border-color: #007bff; }
 
         /* 象棋盤設計 */
         #board {
@@ -37,45 +48,32 @@
         .piece.red { color: #cc0000; border-color: #cc0000; }
         .piece.black { color: #000000; border-color: #000000; }
 
-        /* 變著選擇區：鎖定高度 */
         #variationBox { 
-            max-width: 320px; 
-            margin: 5px auto; 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 5px; 
-            justify-content: center; 
-            align-items: center;
-            min-height: 36px; 
-            visibility: hidden; /* 預設隱藏，保留空間 */
+            max-width: 320px; margin: 5px auto; display: flex; flex-wrap: wrap; gap: 5px; 
+            justify-content: center; align-items: center; min-height: 36px; visibility: hidden; 
         }
         .var-btn { 
             background: #52c41a; color: white; border: none; padding: 6px 14px; 
             border-radius: 4px; font-size: 15px; cursor: pointer; font-weight: bold; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
-            transition: opacity 0.2s; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: opacity 0.2s; 
         }
         .var-btn:active { transform: scale(0.95); }
         .var-btn.main-line { background: #1890ff; }
         
-        /* 註解區：【核心修改】絕對鎖定為 3 行高度，拒絕任何伸縮 */
         #commentBox {
             max-width: 320px; margin: 5px auto 10px auto; padding: 12px;
             background: #fffbe6; border-left: 4px solid #faad14;
             text-align: left; font-size: 15px; color: #333; line-height: 1.5;
-            height: 68px; /* 嚴格鎖定高度：15px * 1.5行高 * 3行 = 約 68px */
-            overflow-y: auto; /* 超過 3 行時內部產生捲動條 */
-            border-radius: 4px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-            white-space: pre-wrap; word-break: break-all;
-            box-sizing: content-box; /* 確保 padding 不影響內容計算 */
+            height: 68px; overflow-y: auto; border-radius: 4px; 
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            white-space: pre-wrap; word-break: break-all; box-sizing: content-box; 
         }
 
-        /* 控制按鈕 */
         .controls { margin-top: 10px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;}
         .btn { padding: 12px 16px; font-size: 16px; cursor: pointer; border-radius: 6px; border: none; background-color: #007bff; color: white; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
         .btn:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; color: #888;}
         .btn:active:not(:disabled) { transform: scale(0.96); }
-        .info-text { margin: 5px 0; color: #666; font-size: 14px; font-weight: bold; }
+        .info-text { margin: 0 0 5px 0; color: #666; font-size: 14px; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
@@ -83,7 +81,8 @@
         <input type="file" id="cblFileInput">
     </div>
     
-    <h3 id="gameTitle">等待載入棋譜...</h3>
+    <h3 id="welcomeTitle">請上傳 CBL 檔案</h3>
+    <select id="gameSelector" class="game-selector"></select>
     <p id="progressInfo" class="info-text"></p>
 
     <div id="board">
@@ -92,14 +91,13 @@
     </div>
 
     <div id="variationBox"></div>
-    
-    <div id="commentBox">請上傳 CBL 檔案以開始閱讀。</div>
+    <div id="commentBox">棋譜載入後，註解會顯示於此。</div>
 
     <div class="controls">
-        <button id="prevBtn" class="btn" disabled>◀ 上一局</button>
+        <button id="prevBtn" class="btn" disabled>◀ 上局</button>
         <button id="prevMoveBtn" class="btn" disabled>上一著</button>
         <button id="nextMoveBtn" class="btn" disabled>下一著</button>
-        <button id="nextBtn" class="btn" disabled>下一局 ▶</button>
+        <button id="nextBtn" class="btn" disabled>下局 ▶</button>
     </div>
 
 <script>
@@ -113,7 +111,6 @@
     let gameOffsets = [];
     let currentGameIndex = 0;
     let currentFileKey = "";
-
     let initialBoard = new Uint8Array(90);
     let gameTreeRoot = null;
     let currentPath = []; 
@@ -142,20 +139,52 @@
 
         if (gameOffsets.length === 0) return alert("找不到任何棋譜！");
         
+        // 建立下拉選單目錄
+        populateGameSelector();
+
         const savedProgress = localStorage.getItem(currentFileKey);
         currentGameIndex = savedProgress !== null ? parseInt(savedProgress) : 0;
         
         loadGame(currentGameIndex);
     }
 
+    // 🏆 新增：生成目錄選單的函數
+    function populateGameSelector() {
+        const selector = document.getElementById('gameSelector');
+        selector.innerHTML = ''; // 清空舊資料
+        
+        gameOffsets.forEach((startSp, index) => {
+            const titleBytes = fileBuffer.slice(startSp + 180, startSp + 180 + 128);
+            const title = decodeStringSafe(titleBytes) || `未命名棋譜`;
+            
+            const option = document.createElement('option');
+            option.value = index;
+            // 讓選單顯示「第 001 局 - 標題名稱」
+            option.textContent = `第 ${index + 1} 局：${title}`;
+            selector.appendChild(option);
+        });
+
+        // 隱藏歡迎詞，顯示選單
+        document.getElementById('welcomeTitle').style.display = 'none';
+        selector.style.display = 'block';
+        document.getElementById('progressInfo').style.display = 'block';
+    }
+
+    // 🏆 新增：監聽下拉選單的變更事件
+    document.getElementById('gameSelector').addEventListener('change', function(e) {
+        const selectedIndex = parseInt(e.target.value);
+        loadGame(selectedIndex);
+    });
+
     function loadGame(index) {
         if (index < 0 || index >= gameOffsets.length) return;
+        currentGameIndex = index; // 確保全域變數更新
         const startSp = gameOffsets[index];
         const maxSp = (index < gameOffsets.length - 1) ? gameOffsets[index + 1] : fileBuffer.length;
         
-        const titleBytes = fileBuffer.slice(startSp + 180, startSp + 180 + 128);
-        document.getElementById('gameTitle').innerText = decodeStringSafe(titleBytes) || `第 ${index + 1} 局`;
-        document.getElementById('progressInfo').innerText = `目前進度：第 ${index + 1} / ${gameOffsets.length} 局`;
+        // 更新 UI 狀態
+        document.getElementById('gameSelector').value = index; // 同步選單畫面
+        document.getElementById('progressInfo').innerText = `總共 ${gameOffsets.length} 局`;
         localStorage.setItem(currentFileKey, index);
 
         initialBoard = new Uint8Array(fileBuffer.slice(startSp + 2120, startSp + 2210));
@@ -233,13 +262,12 @@
 
         const commentBox = document.getElementById('commentBox');
         commentBox.innerText = currentNode.comment || "（無註解）";
-        commentBox.scrollTop = 0; // 當更新內容時，捲軸自動回到最上方
+        commentBox.scrollTop = 0; 
 
         document.getElementById('prevMoveBtn').disabled = currentPath.length === 0;
         document.getElementById('nextMoveBtn').disabled = currentNode.children.length === 0;
 
         let varBox = document.getElementById('variationBox');
-        
         if (currentNode.children.length > 1) {
             varBox.innerHTML = ""; 
             currentNode.children.forEach((child, idx) => {
@@ -301,32 +329,30 @@
 
     document.getElementById('prevMoveBtn').addEventListener('click', () => {
         if (currentPath.length > 0) {
-            currentPath.pop(); 
-            updateBoardState();
+            currentPath.pop(); updateBoardState();
         }
     });
 
     document.getElementById('nextMoveBtn').addEventListener('click', () => {
         let currentNode = currentPath.length > 0 ? currentPath[currentPath.length - 1] : gameTreeRoot;
         if (currentNode && currentNode.children.length > 0) {
-            currentPath.push(currentNode.children[0]); 
-            updateBoardState();
+            currentPath.push(currentNode.children[0]); updateBoardState();
         }
     });
 
     function selectVariation(idx) {
         let currentNode = currentPath.length > 0 ? currentPath[currentPath.length - 1] : gameTreeRoot;
         if (currentNode && currentNode.children.length > idx) {
-            currentPath.push(currentNode.children[idx]); 
-            updateBoardState();
+            currentPath.push(currentNode.children[idx]); updateBoardState();
         }
     }
 
+    // 🏆 修改：點擊下一局時，下拉選單也會跟著同步變動
     document.getElementById('prevBtn').addEventListener('click', () => {
-        if (currentGameIndex > 0) loadGame(--currentGameIndex);
+        if (currentGameIndex > 0) loadGame(currentGameIndex - 1);
     });
     document.getElementById('nextBtn').addEventListener('click', () => {
-        if (currentGameIndex < gameOffsets.length - 1) loadGame(++currentGameIndex);
+        if (currentGameIndex < gameOffsets.length - 1) loadGame(currentGameIndex + 1);
     });
 </script>
 </body>
