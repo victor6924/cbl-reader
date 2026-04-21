@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 7.0</title>
+    <title>CBL 專業打譜器 9.0</title>
     <style>
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; text-align: center; background: #f4f6f8; margin: 0; padding: 10px; }
         h3 { color: #333; margin: 5px 0; font-size: 18px; }
@@ -11,73 +11,82 @@
         .file-upload { margin: 5px auto 10px auto; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 340px; }
         input[type="file"] { font-size: 16px; width: 100%; }
 
-        /* 新增：下拉式目錄選單 */
         .game-selector {
             width: 100%; max-width: 320px; margin: 5px auto; padding: 8px 12px;
-            font-size: 16px; /* 16px 可防止 iOS 點擊時畫面自動放大 */
-            border-radius: 6px; border: 1px solid #aaa; background: #fff;
-            color: #333; font-weight: bold; cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: none; /* 檔案載入前先隱藏 */
+            font-size: 16px; border-radius: 6px; border: 1px solid #aaa; background: #fff;
+            color: #333; font-weight: bold; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none;
         }
-        .game-selector:focus { outline: none; border-color: #007bff; }
 
-        /* 象棋盤設計 */
+        /* 象棋盤設計：加入翻轉動畫 */
         #board {
             position: relative; width: 320px; height: 355px;
             background: #e3c18b; margin: 10px auto;
             border: 2px solid #333; box-shadow: 2px 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
         }
+        #board.flipped { transform: rotate(180deg); }
+
         .grid-lines {
             position: absolute; top: 20px; left: 20px; width: 281px; height: 316px;
             background-image: repeating-linear-gradient(#555 0 1px, transparent 1px 100%), repeating-linear-gradient(90deg, #555 0 1px, transparent 1px 100%);
-            background-size: 35px 35px;
+            background-size: 35px 35px; z-index: 0;
         }
+        
+        /* 新增：九宮格斜線 (使用精準 SVG 背景) */
+        .palace {
+            position: absolute; width: 70px; height: 70px; z-index: 0;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='70'><line x1='0' y1='0' x2='70' y2='70' stroke='%23555' stroke-width='1'/><line x1='70' y1='0' x2='0' y2='70' stroke='%23555' stroke-width='1'/></svg>");
+        }
+        .palace-top { left: 125px; top: 20px; }
+        .palace-bottom { left: 125px; top: 265px; }
+
         .river {
             position: absolute; top: 161px; left: 21px; width: 279px; height: 33px;
             background: #e3c18b; z-index: 1; display: flex; justify-content: space-around; align-items: center;
             font-family: "KaiTi", "標楷體", serif; font-size: 22px; color: #555;
         }
+        
         .piece {
             position: absolute; width: 30px; height: 30px; border-radius: 50%;
             background: #ffebc2; border: 2px solid; text-align: center; line-height: 30px;
             font-weight: bold; font-size: 18px; font-family: "KaiTi", "標楷體", serif;
-            transform: translate(-50%, -50%); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
-            transition: all 0.2s ease-in-out;
+            transform: translate(-50%, -50%); 
+            box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
+            transition: left 0.3s, top 0.3s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        /* 棋盤翻轉時，棋子反轉保證字體朝上 */
+        #board.flipped .piece { transform: translate(-50%, -50%) rotate(-180deg); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); }
+
         .piece.red { color: #cc0000; border-color: #cc0000; }
         .piece.black { color: #000000; border-color: #000000; }
 
-        #variationBox { 
-            max-width: 320px; margin: 5px auto; display: flex; flex-wrap: wrap; gap: 5px; 
-            justify-content: center; align-items: center; min-height: 36px; visibility: hidden; 
-        }
-        .var-btn { 
-            background: #52c41a; color: white; border: none; padding: 6px 14px; 
-            border-radius: 4px; font-size: 15px; cursor: pointer; font-weight: bold; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: opacity 0.2s; 
-        }
-        .var-btn:active { transform: scale(0.95); }
+        #variationBox { max-width: 320px; margin: 5px auto; display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; align-items: center; min-height: 36px; visibility: hidden; }
+        .var-btn { background: #52c41a; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .var-btn.main-line { background: #1890ff; }
         
         #commentBox {
             max-width: 320px; margin: 5px auto 10px auto; padding: 12px;
             background: #fffbe6; border-left: 4px solid #faad14;
             text-align: left; font-size: 15px; color: #333; line-height: 1.5;
-            height: 68px; overflow-y: auto; border-radius: 4px; 
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            height: 68px; overflow-y: auto; border-radius: 4px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
             white-space: pre-wrap; word-break: break-all; box-sizing: content-box; 
         }
 
         .controls { margin-top: 10px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;}
-        .btn { padding: 12px 16px; font-size: 16px; cursor: pointer; border-radius: 6px; border: none; background-color: #007bff; color: white; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
+        .btn { padding: 12px 14px; font-size: 16px; cursor: pointer; border-radius: 6px; border: none; background-color: #007bff; color: white; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
         .btn:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; color: #888;}
         .btn:active:not(:disabled) { transform: scale(0.96); }
+        
+        /* 底部工具列排版調整 */
+        .tools { margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 340px; margin-left: auto; margin-right: auto;}
+        .tool-btn { padding: 10px 8px; background: #f0f2f5; color: #333; border: 1px solid #ccc; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; flex: 1; min-width: 90px; text-align: center;}
+        .tool-btn:active { background: #e4e6e9; transform: scale(0.98);}
+        
         .info-text { margin: 0 0 5px 0; color: #666; font-size: 14px; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
-    <div class="file-upload">
+    <div class="file-upload" id="uploadSection">
         <input type="file" id="cblFileInput">
     </div>
     
@@ -87,6 +96,8 @@
 
     <div id="board">
         <div class="grid-lines"></div>
+        <div class="palace palace-top"></div>
+        <div class="palace palace-bottom"></div>
         <div class="river"><span>楚河</span><span>漢界</span></div>
     </div>
 
@@ -100,21 +111,87 @@
         <button id="nextBtn" class="btn" disabled>下局 ▶</button>
     </div>
 
+    <div class="tools">
+        <button id="flipBtn" class="tool-btn">🔄 翻轉棋盤</button>
+        <button id="shareGameBtn" class="tool-btn">🔗 分享此棋譜</button>
+        <button id="sharePosBtn" class="tool-btn">📷 分享此局面</button>
+    </div>
+
 <script>
     const CBR_MAGIC = [67, 67, 66, 114, 105, 100, 103, 101, 32, 82, 101, 99, 111, 114, 100];
     const PIECE_MAP = {
-        0x11: { text: '俥', cls: 'red' }, 0x12: { text: '傌', cls: 'red' }, 0x13: { text: '相', cls: 'red' }, 0x14: { text: '仕', cls: 'red' }, 0x15: { text: '帥', cls: 'red' }, 0x16: { text: '炮', cls: 'red' }, 0x17: { text: '兵', cls: 'red' },
-        0x21: { text: '車', cls: 'black' }, 0x22: { text: '馬', cls: 'black' }, 0x23: { text: '象', cls: 'black' }, 0x24: { text: '士', cls: 'black' }, 0x25: { text: '將', cls: 'black' }, 0x26: { text: '砲', cls: 'black' }, 0x27: { text: '卒', cls: 'black' }
+        0x11: { text: '俥', cls: 'red', fen: 'R' }, 0x12: { text: '傌', cls: 'red', fen: 'N' }, 0x13: { text: '相', cls: 'red', fen: 'B' }, 0x14: { text: '仕', cls: 'red', fen: 'A' }, 0x15: { text: '帥', cls: 'red', fen: 'K' }, 0x16: { text: '炮', cls: 'red', fen: 'C' }, 0x17: { text: '兵', cls: 'red', fen: 'P' },
+        0x21: { text: '車', cls: 'black', fen: 'r' }, 0x22: { text: '馬', cls: 'black', fen: 'n' }, 0x23: { text: '象', cls: 'black', fen: 'b' }, 0x24: { text: '士', cls: 'black', fen: 'a' }, 0x25: { text: '將', cls: 'black', fen: 'k' }, 0x26: { text: '砲', cls: 'black', fen: 'c' }, 0x27: { text: '卒', cls: 'black', fen: 'p' }
     };
+    const REV_PIECE_MAP = { 'R':0x11, 'N':0x12, 'B':0x13, 'A':0x14, 'K':0x15, 'C':0x16, 'P':0x17, 'r':0x21, 'n':0x22, 'b':0x23, 'a':0x24, 'k':0x25, 'c':0x26, 'p':0x27 };
 
     let fileBuffer = null;
     let gameOffsets = [];
     let currentGameIndex = 0;
     let currentFileKey = "";
+    
     let initialBoard = new Uint8Array(90);
-    let gameTreeRoot = null;
+    let currentBoardState = new Uint8Array(90); 
+    let gameTreeRoot = { children: [], comment: "" };
     let currentPath = []; 
 
+    // === URL 載入檢查 ===
+    window.onload = () => {
+        const params = new URLSearchParams(window.location.search);
+        const sharedFEN = params.get('fen');
+        const sharedMoves = params.get('moves');
+
+        if (sharedFEN) {
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('gameSelector').style.display = 'none';
+            document.getElementById('prevBtn').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+
+            initialBoard = loadFEN(sharedFEN);
+            currentBoardState = new Uint8Array(initialBoard);
+
+            if (sharedMoves) {
+                document.getElementById('welcomeTitle').innerText = "棋友分享的精彩對局";
+                document.getElementById('welcomeTitle').style.display = 'block';
+                document.getElementById('commentBox').innerText = "點擊「下一著」開始觀看。";
+                
+                gameTreeRoot = { children: [], comment: "這是一局分享的棋譜。" };
+                let current = gameTreeRoot;
+                let movesList = sharedMoves.split(',');
+                movesList.forEach(m => {
+                    if (m.length === 4) {
+                        let node = { src: iccsToIndex(m.substring(0,2)), dst: iccsToIndex(m.substring(2,4)), children: [], comment: "" };
+                        current.children.push(node);
+                        current = node;
+                    }
+                });
+                currentPath = [];
+                updateBoardState();
+            } else {
+                document.getElementById('welcomeTitle').innerText = "棋友分享的特定局面";
+                document.getElementById('welcomeTitle').style.display = 'block';
+                document.getElementById('commentBox').innerText = "這是一個殘局畫面，無走子紀錄。";
+                gameTreeRoot = { children: [], comment: "" };
+                currentPath = [];
+                updateBoardState();
+                document.getElementById('nextMoveBtn').disabled = true;
+            }
+        }
+    };
+
+    // --- 座標轉換輔助 ---
+    function iccsToIndex(iccs) {
+        let x = iccs.charCodeAt(0) - 97;
+        let y = 9 - parseInt(iccs[1]);
+        return y * 9 + x;
+    }
+    function indexToIccs(idx) {
+        let x = idx % 9;
+        let y = Math.floor(idx / 9);
+        return String.fromCharCode(97 + x) + (9 - y);
+    }
+
+    // === CBL 解析 ===
     document.getElementById('cblFileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -131,59 +208,41 @@
         gameOffsets = [];
         for (let i = 0; i < buffer.length - CBR_MAGIC.length; i++) {
             let match = true;
-            for (let j = 0; j < CBR_MAGIC.length; j++) {
-                if (buffer[i + j] !== CBR_MAGIC[j]) { match = false; break; }
-            }
+            for (let j = 0; j < CBR_MAGIC.length; j++) { if (buffer[i + j] !== CBR_MAGIC[j]) { match = false; break; } }
             if (match) gameOffsets.push(i);
         }
-
         if (gameOffsets.length === 0) return alert("找不到任何棋譜！");
         
-        // 建立下拉選單目錄
         populateGameSelector();
-
         const savedProgress = localStorage.getItem(currentFileKey);
         currentGameIndex = savedProgress !== null ? parseInt(savedProgress) : 0;
-        
         loadGame(currentGameIndex);
     }
 
-    // 🏆 新增：生成目錄選單的函數
     function populateGameSelector() {
         const selector = document.getElementById('gameSelector');
-        selector.innerHTML = ''; // 清空舊資料
-        
+        selector.innerHTML = ''; 
         gameOffsets.forEach((startSp, index) => {
             const titleBytes = fileBuffer.slice(startSp + 180, startSp + 180 + 128);
-            const title = decodeStringSafe(titleBytes) || `未命名棋譜`;
-            
             const option = document.createElement('option');
             option.value = index;
-            // 讓選單顯示「第 001 局 - 標題名稱」
-            option.textContent = `第 ${index + 1} 局：${title}`;
+            option.textContent = `第 ${index + 1} 局：${decodeStringSafe(titleBytes) || '未命名'}`;
             selector.appendChild(option);
         });
-
-        // 隱藏歡迎詞，顯示選單
         document.getElementById('welcomeTitle').style.display = 'none';
         selector.style.display = 'block';
         document.getElementById('progressInfo').style.display = 'block';
     }
 
-    // 🏆 新增：監聽下拉選單的變更事件
-    document.getElementById('gameSelector').addEventListener('change', function(e) {
-        const selectedIndex = parseInt(e.target.value);
-        loadGame(selectedIndex);
-    });
+    document.getElementById('gameSelector').addEventListener('change', function(e) { loadGame(parseInt(e.target.value)); });
 
     function loadGame(index) {
         if (index < 0 || index >= gameOffsets.length) return;
-        currentGameIndex = index; // 確保全域變數更新
+        currentGameIndex = index; 
         const startSp = gameOffsets[index];
         const maxSp = (index < gameOffsets.length - 1) ? gameOffsets[index + 1] : fileBuffer.length;
         
-        // 更新 UI 狀態
-        document.getElementById('gameSelector').value = index; // 同步選單畫面
+        document.getElementById('gameSelector').value = index; 
         document.getElementById('progressInfo').innerText = `總共 ${gameOffsets.length} 局`;
         localStorage.setItem(currentFileKey, index);
 
@@ -194,8 +253,6 @@
             currentPath = []; 
             updateBoardState();
         } catch (e) {
-            console.error("解析棋譜樹失敗:", e);
-            document.getElementById('commentBox').innerText = "⚠️ 棋譜資料解析失敗或此局無內容。";
             drawBoard(initialBoard);
         }
         
@@ -213,7 +270,6 @@
             let CC = fileBuffer[sp+2];
             let DD = fileBuffer[sp+3];
             sp += 4;
-
             let moveNode = { src: CC, dst: DD, children: [], comment: "" };
 
             if ((AA & 4) === 4) {
@@ -222,40 +278,33 @@
                 if (sp + len <= maxSp && len < 50000) {
                     moveNode.comment = decodeStringSafe(fileBuffer.slice(sp, sp + len));
                     sp += len;
-                } else { break; }
+                } else break;
             }
-
             let parentForSibling = currentParent;
-
             if (CC !== 0 || DD !== 0) {
                 currentParent.children.push(moveNode);
                 currentParent = moveNode; 
             } else if (moveNode.comment) {
                 currentParent.comment += (currentParent.comment ? "\n" : "") + moveNode.comment;
             }
-
-            if ((AA & 2) === 2) {
-                variationQueue.push(parentForSibling);
-            }
-
+            if ((AA & 2) === 2) variationQueue.push(parentForSibling);
             if ((AA & 1) === 1) {
-                if (variationQueue.length > 0) {
-                    currentParent = variationQueue.pop(); 
-                } else { break; }
+                if (variationQueue.length > 0) currentParent = variationQueue.pop(); 
+                else break; 
             }
         }
         return root;
     }
 
     function updateBoardState() {
-        let currentBoard = new Uint8Array(initialBoard);
+        currentBoardState = new Uint8Array(initialBoard);
         for (let node of currentPath) {
             if (node.src !== undefined && node.dst !== undefined) {
-                currentBoard[node.dst] = currentBoard[node.src];
-                currentBoard[node.src] = 0; 
+                currentBoardState[node.dst] = currentBoardState[node.src];
+                currentBoardState[node.src] = 0; 
             }
         }
-        drawBoard(currentBoard);
+        drawBoard(currentBoardState);
 
         let currentNode = currentPath.length > 0 ? currentPath[currentPath.length - 1] : gameTreeRoot;
         if (!currentNode) currentNode = gameTreeRoot;
@@ -274,7 +323,7 @@
                 let btn = document.createElement('button');
                 btn.className = idx === 0 ? "var-btn main-line" : "var-btn";
                 btn.innerText = idx === 0 ? "📍 主線" : `🌿 變著 ${idx}`;
-                btn.onclick = () => selectVariation(idx);
+                btn.onclick = () => { currentPath.push(currentNode.children[idx]); updateBoardState(); };
                 varBox.appendChild(btn);
             });
             varBox.style.visibility = "visible";
@@ -286,7 +335,6 @@
     function drawBoard(boardArray) {
         const boardDiv = document.getElementById('board');
         boardDiv.querySelectorAll('.piece').forEach(e => e.remove());
-
         for (let i = 0; i < 90; i++) {
             const pCode = boardArray[i];
             if (PIECE_MAP[pCode]) {
@@ -302,58 +350,112 @@
         }
     }
 
+    // === 分享核心邏輯 ===
+    function boardToFEN(boardArray) {
+        let rows = [];
+        for (let y = 0; y < 10; y++) {
+            let rowStr = "";
+            let emptyCount = 0;
+            for (let x = 0; x < 9; x++) {
+                let p = boardArray[y * 9 + x];
+                if (PIECE_MAP[p]) {
+                    if (emptyCount > 0) { rowStr += emptyCount; emptyCount = 0; }
+                    rowStr += PIECE_MAP[p].fen;
+                } else emptyCount++;
+            }
+            if (emptyCount > 0) rowStr += emptyCount;
+            rows.push(rowStr);
+        }
+        return rows.join('/');
+    }
+
+    function loadFEN(fenString) {
+        let board = new Uint8Array(90);
+        let rows = fenString.split(' ')[0].split('/'); 
+        for (let y = 0; y < 10 && y < rows.length; y++) {
+            let x = 0;
+            for (let i = 0; i < rows[y].length; i++) {
+                let char = rows[y][i];
+                if (!isNaN(char)) { x += parseInt(char); } 
+                else { board[y * 9 + x] = REV_PIECE_MAP[char]; x++; }
+            }
+        }
+        return board;
+    }
+
+    // 取得當前變化的完整線路 (包含未走完的主線)
+    function getFullLine() {
+        let line = [];
+        for (let i = 0; i < currentPath.length; i++) line.push(currentPath[i]);
+        
+        let current = currentPath.length > 0 ? currentPath[currentPath.length - 1] : gameTreeRoot;
+        while (current && current.children.length > 0) {
+            current = current.children[0]; // 如果沒有點選，預設一直走主線(第0子節點)
+            line.push(current);
+        }
+        return line;
+    }
+
+    function shareContent(includeMoves) {
+        if (gameOffsets.length === 0 && !new URLSearchParams(window.location.search).get('fen')) {
+            alert("請先載入棋譜！"); return;
+        }
+        
+        let shareUrl = window.location.origin + window.location.pathname;
+        let fenStr = "";
+        
+        if (includeMoves) {
+            // 分享棋譜：從「初始盤面」開始，帶上整串「棋步」
+            fenStr = boardToFEN(initialBoard);
+            let movesStr = getFullLine().map(n => indexToIccs(n.src) + indexToIccs(n.dst)).join(',');
+            shareUrl += `?fen=${encodeURIComponent(fenStr)}&moves=${encodeURIComponent(movesStr)}`;
+        } else {
+            // 分享局面：直接鎖定「當下的盤面」
+            fenStr = boardToFEN(currentBoardState);
+            shareUrl += `?fen=${encodeURIComponent(fenStr)}`;
+        }
+
+        const titleStr = includeMoves ? '來看看這局精采的棋譜！' : '快來解開這個棋局！';
+        
+        if (navigator.share) {
+            navigator.share({ title: titleStr, url: shareUrl }).catch(console.error);
+        } else {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert("已複製專屬網址到剪貼簿！\n傳給朋友，免上傳就能直接看！");
+            });
+        }
+    }
+
+    // === 事件綁定 ===
+    document.getElementById('prevBtn').addEventListener('click', () => { if (currentGameIndex > 0) loadGame(currentGameIndex - 1); });
+    document.getElementById('nextBtn').addEventListener('click', () => { if (currentGameIndex < gameOffsets.length - 1) loadGame(currentGameIndex + 1); });
+    document.getElementById('prevMoveBtn').addEventListener('click', () => { if (currentPath.length > 0) { currentPath.pop(); updateBoardState(); } });
+    document.getElementById('nextMoveBtn').addEventListener('click', () => {
+        let currentNode = currentPath.length > 0 ? currentPath[currentPath.length - 1] : gameTreeRoot;
+        if (currentNode && currentNode.children.length > 0) { currentPath.push(currentNode.children[0]); updateBoardState(); }
+    });
+
+    let isFlipped = false;
+    document.getElementById('flipBtn').addEventListener('click', () => {
+        isFlipped = !isFlipped;
+        document.getElementById('board').classList.toggle('flipped', isFlipped);
+    });
+
+    document.getElementById('shareGameBtn').addEventListener('click', () => shareContent(true));
+    document.getElementById('sharePosBtn').addEventListener('click', () => shareContent(false));
+
     function decodeStringSafe(uint8Array) {
         if (!uint8Array || uint8Array.length === 0) return "";
         let end16 = uint8Array.length;
-        for (let i = 0; i < uint8Array.length - 1; i += 2) {
-            if (uint8Array[i] === 0 && uint8Array[i + 1] === 0) {
-                end16 = i; break;
-            }
-        }
+        for (let i = 0; i < uint8Array.length - 1; i += 2) { if (uint8Array[i] === 0 && uint8Array[i + 1] === 0) { end16 = i; break; } }
         let end8 = uint8Array.indexOf(0);
         if (end8 === -1) end8 = uint8Array.length;
-
-        let valid16 = uint8Array.slice(0, end16);
-        let valid8 = uint8Array.slice(0, end8);
-
-        let text16 = new TextDecoder('utf-16le').decode(valid16).replace(/\0/g, '').trim();
-        let textGBK = new TextDecoder('gbk').decode(valid8).replace(/\0/g, '').trim();
-
+        let text16 = new TextDecoder('utf-16le').decode(uint8Array.slice(0, end16)).replace(/\0/g, '').trim();
+        let textGBK = new TextDecoder('gbk').decode(uint8Array.slice(0, end8)).replace(/\0/g, '').trim();
         let score16 = (text16.match(/[\u4e00-\u9fa5]/g) || []).length;
         let scoreGBK = (textGBK.match(/[\u4e00-\u9fa5]/g) || []).length;
-
-        if (score16 > 0 && score16 >= scoreGBK) return text16;
-        else if (scoreGBK > 0) return textGBK;
-        else return text16 || textGBK;
+        return (score16 > 0 && score16 >= scoreGBK) ? text16 : (scoreGBK > 0 ? textGBK : (text16 || textGBK));
     }
-
-    document.getElementById('prevMoveBtn').addEventListener('click', () => {
-        if (currentPath.length > 0) {
-            currentPath.pop(); updateBoardState();
-        }
-    });
-
-    document.getElementById('nextMoveBtn').addEventListener('click', () => {
-        let currentNode = currentPath.length > 0 ? currentPath[currentPath.length - 1] : gameTreeRoot;
-        if (currentNode && currentNode.children.length > 0) {
-            currentPath.push(currentNode.children[0]); updateBoardState();
-        }
-    });
-
-    function selectVariation(idx) {
-        let currentNode = currentPath.length > 0 ? currentPath[currentPath.length - 1] : gameTreeRoot;
-        if (currentNode && currentNode.children.length > idx) {
-            currentPath.push(currentNode.children[idx]); updateBoardState();
-        }
-    }
-
-    // 🏆 修改：點擊下一局時，下拉選單也會跟著同步變動
-    document.getElementById('prevBtn').addEventListener('click', () => {
-        if (currentGameIndex > 0) loadGame(currentGameIndex - 1);
-    });
-    document.getElementById('nextBtn').addEventListener('click', () => {
-        if (currentGameIndex < gameOffsets.length - 1) loadGame(currentGameIndex + 1);
-    });
 </script>
 </body>
 </html>
