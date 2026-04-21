@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.0</title>
+    <title>CBL 專業打譜器 9.1</title>
     <style>
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; text-align: center; background: #f4f6f8; margin: 0; padding: 10px; }
         h3 { color: #333; margin: 5px 0; font-size: 18px; }
@@ -32,7 +32,7 @@
             background-size: 35px 35px; z-index: 0;
         }
         
-        /* 新增：九宮格斜線 (使用精準 SVG 背景) */
+        /* 九宮格斜線 */
         .palace {
             position: absolute; width: 70px; height: 70px; z-index: 0;
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='70'><line x1='0' y1='0' x2='70' y2='70' stroke='%23555' stroke-width='1'/><line x1='70' y1='0' x2='0' y2='70' stroke='%23555' stroke-width='1'/></svg>");
@@ -54,7 +54,6 @@
             box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
             transition: left 0.3s, top 0.3s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* 棋盤翻轉時，棋子反轉保證字體朝上 */
         #board.flipped .piece { transform: translate(-50%, -50%) rotate(-180deg); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); }
 
         .piece.red { color: #cc0000; border-color: #cc0000; }
@@ -77,9 +76,31 @@
         .btn:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; color: #888;}
         .btn:active:not(:disabled) { transform: scale(0.96); }
         
-        /* 底部工具列排版調整 */
-        .tools { margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 340px; margin-left: auto; margin-right: auto;}
-        .tool-btn { padding: 10px 8px; background: #f0f2f5; color: #333; border: 1px solid #ccc; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; flex: 1; min-width: 90px; text-align: center;}
+        /* === 底部工具列：極致壓縮版 === */
+        .tools { 
+            margin-top: 8px; /* 縮小與上方按鈕的距離 */
+            padding-top: 8px; 
+            border-top: 1px solid #ddd; 
+            display: flex; 
+            justify-content: center; 
+            gap: 5px; /* 按鈕間的縫隙縮小 */
+            max-width: 340px; 
+            margin-left: auto; 
+            margin-right: auto;
+        }
+        .tool-btn { 
+            padding: 5px 2px; /* 核心：高度大幅縮減一半 */
+            background: #f0f2f5; 
+            color: #333; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 12px; /* 核心：文字縮小 */
+            flex: 1; 
+            text-align: center;
+            white-space: nowrap; /* 核心：強制不換行，保證排在同一列 */
+        }
         .tool-btn:active { background: #e4e6e9; transform: scale(0.98);}
         
         .info-text { margin: 0 0 5px 0; color: #666; font-size: 14px; font-weight: bold; display: none; }
@@ -135,7 +156,6 @@
     let gameTreeRoot = { children: [], comment: "" };
     let currentPath = []; 
 
-    // === URL 載入檢查 ===
     window.onload = () => {
         const params = new URLSearchParams(window.location.search);
         const sharedFEN = params.get('fen');
@@ -179,7 +199,6 @@
         }
     };
 
-    // --- 座標轉換輔助 ---
     function iccsToIndex(iccs) {
         let x = iccs.charCodeAt(0) - 97;
         let y = 9 - parseInt(iccs[1]);
@@ -191,7 +210,6 @@
         return String.fromCharCode(97 + x) + (9 - y);
     }
 
-    // === CBL 解析 ===
     document.getElementById('cblFileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -350,7 +368,6 @@
         }
     }
 
-    // === 分享核心邏輯 ===
     function boardToFEN(boardArray) {
         let rows = [];
         for (let y = 0; y < 10; y++) {
@@ -383,14 +400,12 @@
         return board;
     }
 
-    // 取得當前變化的完整線路 (包含未走完的主線)
     function getFullLine() {
         let line = [];
         for (let i = 0; i < currentPath.length; i++) line.push(currentPath[i]);
-        
         let current = currentPath.length > 0 ? currentPath[currentPath.length - 1] : gameTreeRoot;
         while (current && current.children.length > 0) {
-            current = current.children[0]; // 如果沒有點選，預設一直走主線(第0子節點)
+            current = current.children[0]; 
             line.push(current);
         }
         return line;
@@ -405,12 +420,10 @@
         let fenStr = "";
         
         if (includeMoves) {
-            // 分享棋譜：從「初始盤面」開始，帶上整串「棋步」
             fenStr = boardToFEN(initialBoard);
             let movesStr = getFullLine().map(n => indexToIccs(n.src) + indexToIccs(n.dst)).join(',');
             shareUrl += `?fen=${encodeURIComponent(fenStr)}&moves=${encodeURIComponent(movesStr)}`;
         } else {
-            // 分享局面：直接鎖定「當下的盤面」
             fenStr = boardToFEN(currentBoardState);
             shareUrl += `?fen=${encodeURIComponent(fenStr)}`;
         }
@@ -426,7 +439,6 @@
         }
     }
 
-    // === 事件綁定 ===
     document.getElementById('prevBtn').addEventListener('click', () => { if (currentGameIndex > 0) loadGame(currentGameIndex - 1); });
     document.getElementById('nextBtn').addEventListener('click', () => { if (currentGameIndex < gameOffsets.length - 1) loadGame(currentGameIndex + 1); });
     document.getElementById('prevMoveBtn').addEventListener('click', () => { if (currentPath.length > 0) { currentPath.pop(); updateBoardState(); } });
