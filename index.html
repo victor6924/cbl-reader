@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.1</title>
+    <title>CBL 專業打譜器 9.2</title>
     <style>
+        /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
-    font-family: 'MyChessFont';
-    src: url('./GracefulMingKai_V1_2.subset.woff2') format('woff2');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
+            font-family: 'MyChessFont';
+            src: url('./chess-font.woff2') format('woff2'); /* 請確保 GitHub 上有這個檔案 */
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; text-align: center; background: #f4f6f8; margin: 0; padding: 10px; }
         h3 { color: #333; margin: 5px 0; font-size: 18px; }
         
@@ -47,16 +49,20 @@
         .palace-top { left: 125px; top: 20px; }
         .palace-bottom { left: 125px; top: 265px; }
 
+        /* === 楚河漢界：套用專屬字體 === */
         .river {
             position: absolute; top: 161px; left: 21px; width: 279px; height: 33px;
             background: #e3c18b; z-index: 1; display: flex; justify-content: space-around; align-items: center;
-            font-family: "KaiTi", "標楷體", serif; font-size: 22px; color: #555;
+            font-family: 'MyChessFont', "KaiTi", "標楷體", serif; /* 優先使用客製化字體 */
+            font-size: 22px; color: #555;
         }
         
+        /* === 棋子設計：套用專屬字體 === */
         .piece {
             position: absolute; width: 30px; height: 30px; border-radius: 50%;
             background: #ffebc2; border: 2px solid; text-align: center; line-height: 30px;
-            font-weight: bold; font-size: 18px; font-family: "KaiTi", "標楷體", serif;
+            font-weight: bold; font-size: 18px; 
+            font-family: 'MyChessFont', "KaiTi", "標楷體", serif; /* 優先使用客製化字體 */
             transform: translate(-50%, -50%); 
             box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
             transition: left 0.3s, top 0.3s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -83,30 +89,15 @@
         .btn:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; color: #888;}
         .btn:active:not(:disabled) { transform: scale(0.96); }
         
-        /* === 底部工具列：極致壓縮版 === */
+        /* 底部工具列：極致壓縮版 */
         .tools { 
-            margin-top: 8px; /* 縮小與上方按鈕的距離 */
-            padding-top: 8px; 
-            border-top: 1px solid #ddd; 
-            display: flex; 
-            justify-content: center; 
-            gap: 5px; /* 按鈕間的縫隙縮小 */
-            max-width: 340px; 
-            margin-left: auto; 
-            margin-right: auto;
+            margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; 
+            display: flex; justify-content: center; gap: 5px; max-width: 340px; margin-left: auto; margin-right: auto;
         }
         .tool-btn { 
-            padding: 5px 2px; /* 核心：高度大幅縮減一半 */
-            background: #f0f2f5; 
-            color: #333; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 12px; /* 核心：文字縮小 */
-            flex: 1; 
-            text-align: center;
-            white-space: nowrap; /* 核心：強制不換行，保證排在同一列 */
+            padding: 5px 2px; background: #f0f2f5; color: #333; border: 1px solid #ccc; 
+            border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; 
+            flex: 1; text-align: center; white-space: nowrap; 
         }
         .tool-btn:active { background: #e4e6e9; transform: scale(0.98);}
         
@@ -142,7 +133,7 @@
     <div class="tools">
         <button id="flipBtn" class="tool-btn">🔄 翻轉棋盤</button>
         <button id="shareGameBtn" class="tool-btn">🔗 分享此棋譜</button>
-        <button id="sharePosBtn" class="tool-btn">📷 分享此局面</button>
+        <button id="sharePosBtn" class="tool-btn">📷 分享此棋局</button>
     </div>
 
 <script>
