@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.2</title>
+    <title>CBL 專業打譜器 9.3 最終大師版</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
@@ -49,20 +49,35 @@
         .palace-top { left: 125px; top: 20px; }
         .palace-bottom { left: 125px; top: 265px; }
 
-        /* === 楚河漢界：套用專屬字體 === */
+        /* 楚河漢界：套用專屬字體 */
         .river {
             position: absolute; top: 161px; left: 21px; width: 279px; height: 33px;
             background: #e3c18b; z-index: 1; display: flex; justify-content: space-around; align-items: center;
-            font-family: 'MyChessFont', "KaiTi", "標楷體", serif; /* 優先使用客製化字體 */
+            font-family: 'MyChessFont', "KaiTi", "標楷體", serif;
             font-size: 22px; color: #555;
         }
         
-        /* === 棋子設計：套用專屬字體 === */
+        /* === 棋子設計：字體放大與完美置中 === */
         .piece {
-            position: absolute; width: 30px; height: 30px; border-radius: 50%;
-            background: #ffebc2; border: 2px solid; text-align: center; line-height: 30px;
-            font-weight: bold; font-size: 18px; 
-            font-family: 'MyChessFont', "KaiTi", "標楷體", serif; /* 優先使用客製化字體 */
+            position: absolute; 
+            width: 34px; height: 34px; 
+            box-sizing: border-box; 
+            border-radius: 50%;
+            background: #ffebc2; 
+            border: 1.5px solid; 
+            
+            /* 使用 Flexbox 進行垂直/水平置中 */
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            
+            font-weight: bold; 
+            font-size: 22px; /* 字體放大 */
+            font-family: 'MyChessFont', "KaiTi", "標楷體", serif;
+            
+            /* 視覺微調：解決字體太黏底部邊框的問題 */
+            padding-bottom: 3px; 
+            
             transform: translate(-50%, -50%); 
             box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
             transition: left 0.3s, top 0.3s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
