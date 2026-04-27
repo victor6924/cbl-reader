@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.3 最終大師版</title>
+    <title>CBL 專業打譜器 9.2 (大字體修正版)</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
             font-family: 'MyChessFont';
-            src: url('./chess-font.woff2') format('woff2'); /* 請確保 GitHub 上有這個檔案 */
+            src: url('./chess-font.woff2') format('woff2'); 
             font-weight: normal;
             font-style: normal;
             font-display: swap;
@@ -57,27 +57,18 @@
             font-size: 22px; color: #555;
         }
         
-        /* === 棋子設計：字體放大與完美置中 === */
+        /* === 棋子設計：還原 9.2 結構並保持大字體 === */
         .piece {
             position: absolute; 
-            width: 34px; height: 34px; 
-            box-sizing: border-box; 
+            width: 30px; height: 30px; /* 還原為 30px */
             border-radius: 50%;
             background: #ffebc2; 
-            border: 1.5px solid; 
-            
-            /* 使用 Flexbox 進行垂直/水平置中 */
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            
+            border: 2px solid; /* 還原為 2px */
+            text-align: center; 
+            line-height: 30px; /* 還原為行高對齊 */
             font-weight: bold; 
-            font-size: 22px; /* 字體放大 */
+            font-size: 22px; /* 唯一保留的變更：字體放大 */
             font-family: 'MyChessFont', "KaiTi", "標楷體", serif;
-            
-            /* 視覺微調：解決字體太黏底部邊框的問題 */
-            padding-bottom: 3px; 
-            
             transform: translate(-50%, -50%); 
             box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
             transition: left 0.3s, top 0.3s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
