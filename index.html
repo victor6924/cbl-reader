@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.2 (大字體修正版)</title>
+    <title>CBL 專業打譜器 9.4 (雙平台字體最佳化)</title>
     <style>
-        /* === 載入專屬的超輕量客製化字體 === */
+        /* === 載入專屬的超輕量客製化字體 (供手機端使用) === */
         @font-face {
             font-family: 'MyChessFont';
             src: url('./chess-font.woff2') format('woff2'); 
@@ -49,26 +49,27 @@
         .palace-top { left: 125px; top: 20px; }
         .palace-bottom { left: 125px; top: 265px; }
 
-        /* 楚河漢界：套用專屬字體 */
+        /* === 楚河漢界：Windows 優先使用黑體，手機則使用客製字體 === */
         .river {
             position: absolute; top: 161px; left: 21px; width: 279px; height: 33px;
             background: #e3c18b; z-index: 1; display: flex; justify-content: space-around; align-items: center;
-            font-family: 'MyChessFont', "KaiTi", "標楷體", serif;
-            font-size: 26px; color: #555;
+            font-family: "Microsoft JhengHei", "微軟正黑體", 'MyChessFont', "PingFang TC", sans-serif;
+            font-size: 22px; color: #555;
         }
         
-        /* === 棋子設計：還原 9.2 結構並保持大字體 === */
+        /* === 棋子設計：保留 22px 大字體與雙平台字體分流 === */
         .piece {
             position: absolute; 
-            width: 30px; height: 30px; /* 還原為 30px */
+            width: 30px; height: 30px; 
             border-radius: 50%;
             background: #ffebc2; 
-            border: 2px solid; /* 還原為 2px */
+            border: 2px solid; 
             text-align: center; 
-            line-height: 30px; /* 還原為行高對齊 */
+            line-height: 30px; 
             font-weight: bold; 
-            font-size: 22px; /* 唯一保留的變更：字體放大 */
-            font-family: 'MyChessFont', "KaiTi", "標楷體", serif;
+            font-size: 22px; /* 保留字體放大 */
+            /* 核心修改：Windows 吃微軟正黑體，手機吃 MyChessFont */
+            font-family: "Microsoft JhengHei", "微軟正黑體", 'MyChessFont', "PingFang TC", sans-serif;
             transform: translate(-50%, -50%); 
             box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
             transition: left 0.3s, top 0.3s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
