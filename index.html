@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.5 (落子軌跡版)</title>
+    <title>CBL 專業打譜器 9.6 (極致動態版)</title>
     <style>
-        /* === 載入專屬的超輕量客製化字體 (供手機端使用) === */
+        /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
             font-family: 'MyChessFont';
             src: url('./chess-font.woff2') format('woff2'); 
@@ -49,7 +49,7 @@
         .palace-top { left: 125px; top: 20px; }
         .palace-bottom { left: 125px; top: 265px; }
 
-        /* 楚河漢界：Windows 優先使用黑體，手機則使用客製字體 */
+        /* 楚河漢界 */
         .river {
             position: absolute; top: 161px; left: 21px; width: 279px; height: 33px;
             background: #e3c18b; z-index: 1; display: flex; justify-content: space-around; align-items: center;
@@ -57,7 +57,7 @@
             font-size: 22px; color: #555;
         }
         
-        /* === 棋子設計 === */
+        /* === 棋子基礎設計 === */
         .piece {
             position: absolute; 
             width: 30px; height: 30px; 
@@ -71,44 +71,81 @@
             font-family: "Microsoft JhengHei", "微軟正黑體", 'MyChessFont', "PingFang TC", sans-serif;
             transform: translate(-50%, -50%); 
             box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
-            transition: left 0.3s, top 0.3s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            /* 預設的緩動，用於打譜拖曳或重繪 */
+            transition: left 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), top 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.6s;
         }
         #board.flipped .piece { transform: translate(-50%, -50%) rotate(-180deg); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); }
-
         .piece.red { color: #cc0000; border-color: #cc0000; }
         .piece.black { color: #000000; border-color: #000000; }
 
-        /* === 新增：落子軌跡標記 === */
-        .highlight {
+        /* === 新增：移動標記點 === */
+        .start-marker {
+            position: absolute;
+            width: 8px; height: 8px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 4;
+        }
+        .end-marker {
             position: absolute;
             width: 34px; height: 34px;
-            background-color: rgba(24, 144, 255, 0.35); /* 半透明科技藍 */
+            border: 1.5px dashed rgba(24, 144, 255, 0.7);
             border-radius: 6px;
             transform: translate(-50%, -50%);
-            z-index: 5; /* 在線條之上，棋子之下 */
+            z-index: 4;
+            box-sizing: border-box;
         }
 
+        /* === 核心動畫：跳躍與頓挫特效 === */
+        @keyframes jumpMove {
+            0%   { transform: translate(-50%, -50%) scale(1); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); }
+            50%  { transform: translate(-50%, -50%) scale(1.15); box-shadow: 4px 8px 10px rgba(0,0,0,0.4); }
+            100% { transform: translate(-50%, -50%) scale(1); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); }
+        }
+        @keyframes jumpMoveFlipped {
+            0%   { transform: translate(-50%, -50%) rotate(-180deg) scale(1); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); }
+            50%  { transform: translate(-50%, -50%) rotate(-180deg) scale(1.15); box-shadow: -4px -8px 10px rgba(0,0,0,0.4); }
+            100% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); }
+        }
+        @keyframes pieceLand {
+            0%   { transform: translate(-50%, -50%) scale(1.15); }
+            40%  { transform: translate(-50%, -50%) scale(0.9); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes pieceLandFlipped {
+            0%   { transform: translate(-50%, -50%) rotate(-180deg) scale(1.15); }
+            40%  { transform: translate(-50%, -50%) rotate(-180deg) scale(0.9); }
+            100% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); }
+        }
+
+        /* 觸發跳躍時加上此 Class */
+        .piece.jumping {
+            animation: jumpMove 0.25s ease-in-out;
+            z-index: 100 !important;
+        }
+        #board.flipped .piece.jumping { animation: jumpMoveFlipped 0.25s ease-in-out; }
+        
+        /* 觸發吃子落地時加上此 Class */
+        .piece.landing {
+            animation: pieceLand 0.15s ease-out;
+        }
+        #board.flipped .piece.landing { animation: pieceLandFlipped 0.15s ease-out; }
+
+        /* UI 排版區 */
         #variationBox { max-width: 320px; margin: 5px auto; display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; align-items: center; min-height: 36px; visibility: hidden; }
         .var-btn { background: #52c41a; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .var-btn.main-line { background: #1890ff; }
-        
-        #commentBox {
-            max-width: 320px; margin: 5px auto 10px auto; padding: 12px;
-            background: #fffbe6; border-left: 4px solid #faad14;
-            text-align: left; font-size: 15px; color: #333; line-height: 1.5;
-            height: 68px; overflow-y: auto; border-radius: 4px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-            white-space: pre-wrap; word-break: break-all; box-sizing: content-box; 
-        }
-
+        #commentBox { max-width: 320px; margin: 5px auto 10px auto; padding: 12px; background: #fffbe6; border-left: 4px solid #faad14; text-align: left; font-size: 15px; color: #333; line-height: 1.5; height: 68px; overflow-y: auto; border-radius: 4px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); white-space: pre-wrap; word-break: break-all; box-sizing: content-box; }
         .controls { margin-top: 10px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;}
         .btn { padding: 12px 14px; font-size: 16px; cursor: pointer; border-radius: 6px; border: none; background-color: #007bff; color: white; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
         .btn:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; color: #888;}
         .btn:active:not(:disabled) { transform: scale(0.96); }
-        
-        .tools { margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; display: flex; justify-content: center; gap: 5px; max-width: 340px; margin-left: auto; margin-right: auto; }
+        .tools { margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; display: flex; justify-content: center; gap: 5px; max-width: 340px; margin-left: auto; margin-right: auto;}
         .tool-btn { padding: 5px 2px; background: #f0f2f5; color: #333; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; flex: 1; text-align: center; white-space: nowrap; }
         .tool-btn:active { background: #e4e6e9; transform: scale(0.98);}
-        
         .info-text { margin: 0 0 5px 0; color: #666; font-size: 14px; font-weight: bold; display: none; }
     </style>
 </head>
@@ -161,6 +198,7 @@
     let currentBoardState = new Uint8Array(90); 
     let gameTreeRoot = { children: [], comment: "" };
     let currentPath = []; 
+    let isAnimating = false; // 狀態鎖：防止動畫中連續點擊
 
     window.onload = () => {
         const params = new URLSearchParams(window.location.search);
@@ -258,7 +296,10 @@
         document.getElementById('progressInfo').style.display = 'block';
     }
 
-    document.getElementById('gameSelector').addEventListener('change', function(e) { loadGame(parseInt(e.target.value)); });
+    document.getElementById('gameSelector').addEventListener('change', function(e) { 
+        if (isAnimating) return;
+        loadGame(parseInt(e.target.value)); 
+    });
 
     function loadGame(index) {
         if (index < 0 || index >= gameOffsets.length) return;
@@ -320,6 +361,57 @@
         return root;
     }
 
+    // === 動態走子引擎 ===
+    function doMoveAnimation(src, dst, isCapture, callback) {
+        const boardDiv = document.getElementById('board');
+        const srcX = src % 9; const srcY = Math.floor(src / 9);
+        const dstX = dst % 9; const dstY = Math.floor(dst / 9);
+
+        let movingPiece = null;
+        let targetPiece = null;
+
+        // 找出被移動與被吃的棋子 DOM 元件
+        boardDiv.querySelectorAll('.piece').forEach(p => {
+            const px = parseInt(p.style.left);
+            const py = parseInt(p.style.top);
+            if (px === 20 + srcX * 35 && py === 20 + srcY * 35) movingPiece = p;
+            if (px === 20 + dstX * 35 && py === 20 + dstY * 35) targetPiece = p;
+        });
+
+        if (!movingPiece) { callback(); return; }
+
+        // 1. 動畫瞬間產生起始位置的小白點
+        const startMarker = document.createElement('div');
+        startMarker.className = 'start-marker';
+        startMarker.style.left = (20 + srcX * 35) + 'px';
+        startMarker.style.top = (20 + srcY * 35) + 'px';
+        boardDiv.appendChild(startMarker);
+
+        // 2. 觸發跳躍動畫
+        movingPiece.classList.add('jumping');
+        movingPiece.style.left = (20 + dstX * 35) + 'px';
+        movingPiece.style.top = (20 + dstY * 35) + 'px';
+
+        // 3. 處理吃子特效
+        if (isCapture && targetPiece) {
+            setTimeout(() => {
+                const isFlipped = boardDiv.classList.contains('flipped');
+                targetPiece.style.transform = isFlipped ? 'translate(-50%, -50%) rotate(-180deg) scale(0)' : 'translate(-50%, -50%) scale(0)';
+                targetPiece.style.opacity = '0';
+                targetPiece.style.transition = 'all 0.1s';
+                
+                // 攻擊方落地頓挫感
+                movingPiece.classList.add('landing');
+            }, 125); // 動畫進行到一半時觸發
+        }
+
+        // 4. 動畫結束後復原狀態並執行回呼
+        setTimeout(() => {
+            movingPiece.classList.remove('jumping', 'landing');
+            callback();
+        }, 250); 
+    }
+
     function updateBoardState() {
         currentBoardState = new Uint8Array(initialBoard);
         for (let node of currentPath) {
@@ -347,7 +439,14 @@
                 let btn = document.createElement('button');
                 btn.className = idx === 0 ? "var-btn main-line" : "var-btn";
                 btn.innerText = idx === 0 ? "📍 主線" : `🌿 變著 ${idx}`;
-                btn.onclick = () => { currentPath.push(currentNode.children[idx]); updateBoardState(); };
+                btn.onclick = () => { 
+                    if (isAnimating) return;
+                    let isCapture = currentBoardState[child.dst] !== 0;
+                    isAnimating = true;
+                    doMoveAnimation(child.src, child.dst, isCapture, () => {
+                        currentPath.push(child); updateBoardState(); isAnimating = false;
+                    });
+                };
                 varBox.appendChild(btn);
             });
             varBox.style.visibility = "visible";
@@ -356,30 +455,31 @@
         }
     }
 
-    // === 核心修改：繪製棋子與軌跡 ===
+    // === 繪製棋盤與靜態標記 ===
     function drawBoard(boardArray) {
         const boardDiv = document.getElementById('board');
-        // 清除舊的棋子與軌跡標記
-        boardDiv.querySelectorAll('.piece, .highlight').forEach(e => e.remove());
+        boardDiv.querySelectorAll('.piece, .start-marker, .end-marker').forEach(e => e.remove());
 
-        // 1. 繪製最後落子軌跡 (如果有歷史步數的話)
+        // 繪製軌跡標記 (放在棋子下方)
         if (currentPath.length > 0) {
             let lastMove = currentPath[currentPath.length - 1];
             if (lastMove && lastMove.src !== undefined && lastMove.dst !== undefined) {
-                // 產生起點與終點的兩個標記
-                [lastMove.src, lastMove.dst].forEach(idx => {
-                    const x = idx % 9;
-                    const y = Math.floor(idx / 9);
-                    const hl = document.createElement('div');
-                    hl.className = 'highlight';
-                    hl.style.left = (20 + x * 35) + 'px';
-                    hl.style.top = (20 + y * 35) + 'px';
-                    boardDiv.appendChild(hl);
-                });
+                const sx = lastMove.src % 9; const sy = Math.floor(lastMove.src / 9);
+                const startMarker = document.createElement('div');
+                startMarker.className = 'start-marker';
+                startMarker.style.left = (20 + sx * 35) + 'px';
+                startMarker.style.top = (20 + sy * 35) + 'px';
+                boardDiv.appendChild(startMarker);
+
+                const dx = lastMove.dst % 9; const dy = Math.floor(lastMove.dst / 9);
+                const endMarker = document.createElement('div');
+                endMarker.className = 'end-marker';
+                endMarker.style.left = (20 + dx * 35) + 'px';
+                endMarker.style.top = (20 + dy * 35) + 'px';
+                boardDiv.appendChild(endMarker);
             }
         }
 
-        // 2. 繪製棋子
         for (let i = 0; i < 90; i++) {
             const pCode = boardArray[i];
             if (PIECE_MAP[pCode]) {
@@ -468,10 +568,27 @@
 
     document.getElementById('prevBtn').addEventListener('click', () => { if (currentGameIndex > 0) loadGame(currentGameIndex - 1); });
     document.getElementById('nextBtn').addEventListener('click', () => { if (currentGameIndex < gameOffsets.length - 1) loadGame(currentGameIndex + 1); });
-    document.getElementById('prevMoveBtn').addEventListener('click', () => { if (currentPath.length > 0) { currentPath.pop(); updateBoardState(); } });
+    
+    // 退回上一步 (保持原來的快速重置)
+    document.getElementById('prevMoveBtn').addEventListener('click', () => { 
+        if (isAnimating) return;
+        if (currentPath.length > 0) { currentPath.pop(); updateBoardState(); } 
+    });
+
+    // 動態下一步
     document.getElementById('nextMoveBtn').addEventListener('click', () => {
+        if (isAnimating) return;
         let currentNode = currentPath.length > 0 ? currentPath[currentPath.length - 1] : gameTreeRoot;
-        if (currentNode && currentNode.children.length > 0) { currentPath.push(currentNode.children[0]); updateBoardState(); }
+        if (currentNode && currentNode.children.length > 0) { 
+            let nextNode = currentNode.children[0];
+            let isCapture = currentBoardState[nextNode.dst] !== 0;
+            isAnimating = true;
+            doMoveAnimation(nextNode.src, nextNode.dst, isCapture, () => {
+                currentPath.push(nextNode); 
+                updateBoardState(); 
+                isAnimating = false;
+            });
+        }
     });
 
     let isFlipped = false;
