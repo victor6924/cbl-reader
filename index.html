@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.6 (極致動態版)</title>
+    <title>CBL 專業打譜器 9.7 (光環標記版)</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
@@ -78,7 +78,7 @@
         .piece.red { color: #cc0000; border-color: #cc0000; }
         .piece.black { color: #000000; border-color: #000000; }
 
-        /* === 新增：移動標記點 === */
+        /* === 移動標記點 === */
         .start-marker {
             position: absolute;
             width: 8px; height: 8px;
@@ -89,13 +89,16 @@
             transform: translate(-50%, -50%);
             z-index: 4;
         }
+        
+        /* === 核心修改：終點淡藍色光環 === */
         .end-marker {
             position: absolute;
-            width: 34px; height: 34px;
-            border: 1.5px dashed rgba(24, 144, 255, 0.7);
-            border-radius: 6px;
+            width: 38px; height: 38px; /* 比棋子稍微大一圈 */
+            border: 2px solid rgba(24, 144, 255, 0.65); /* 淡藍色實線 */
+            background-color: rgba(24, 144, 255, 0.15); /* 微微的藍色光暈底 */
+            border-radius: 50%; /* 改為完美的圓形 */
             transform: translate(-50%, -50%);
-            z-index: 4;
+            z-index: 4; /* 墊在棋子下方 */
             box-sizing: border-box;
         }
 
