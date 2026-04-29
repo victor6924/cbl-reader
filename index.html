@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.4 (雙平台字體最佳化)</title>
+    <title>CBL 專業打譜器 9.5 (落子軌跡版)</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 (供手機端使用) === */
         @font-face {
@@ -49,7 +49,7 @@
         .palace-top { left: 125px; top: 20px; }
         .palace-bottom { left: 125px; top: 265px; }
 
-        /* === 楚河漢界：Windows 優先使用黑體，手機則使用客製字體 === */
+        /* 楚河漢界：Windows 優先使用黑體，手機則使用客製字體 */
         .river {
             position: absolute; top: 161px; left: 21px; width: 279px; height: 33px;
             background: #e3c18b; z-index: 1; display: flex; justify-content: space-around; align-items: center;
@@ -57,7 +57,7 @@
             font-size: 22px; color: #555;
         }
         
-        /* === 棋子設計：保留 22px 大字體與雙平台字體分流 === */
+        /* === 棋子設計 === */
         .piece {
             position: absolute; 
             width: 30px; height: 30px; 
@@ -67,8 +67,7 @@
             text-align: center; 
             line-height: 30px; 
             font-weight: bold; 
-            font-size: 22px; /* 保留字體放大 */
-            /* 核心修改：Windows 吃微軟正黑體，手機吃 MyChessFont */
+            font-size: 22px; 
             font-family: "Microsoft JhengHei", "微軟正黑體", 'MyChessFont', "PingFang TC", sans-serif;
             transform: translate(-50%, -50%); 
             box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
@@ -78,6 +77,16 @@
 
         .piece.red { color: #cc0000; border-color: #cc0000; }
         .piece.black { color: #000000; border-color: #000000; }
+
+        /* === 新增：落子軌跡標記 === */
+        .highlight {
+            position: absolute;
+            width: 34px; height: 34px;
+            background-color: rgba(24, 144, 255, 0.35); /* 半透明科技藍 */
+            border-radius: 6px;
+            transform: translate(-50%, -50%);
+            z-index: 5; /* 在線條之上，棋子之下 */
+        }
 
         #variationBox { max-width: 320px; margin: 5px auto; display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; align-items: center; min-height: 36px; visibility: hidden; }
         .var-btn { background: #52c41a; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-size: 15px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
@@ -96,16 +105,8 @@
         .btn:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; color: #888;}
         .btn:active:not(:disabled) { transform: scale(0.96); }
         
-        /* 底部工具列：極致壓縮版 */
-        .tools { 
-            margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; 
-            display: flex; justify-content: center; gap: 5px; max-width: 340px; margin-left: auto; margin-right: auto;
-        }
-        .tool-btn { 
-            padding: 5px 2px; background: #f0f2f5; color: #333; border: 1px solid #ccc; 
-            border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; 
-            flex: 1; text-align: center; white-space: nowrap; 
-        }
+        .tools { margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; display: flex; justify-content: center; gap: 5px; max-width: 340px; margin-left: auto; margin-right: auto; }
+        .tool-btn { padding: 5px 2px; background: #f0f2f5; color: #333; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; flex: 1; text-align: center; white-space: nowrap; }
         .tool-btn:active { background: #e4e6e9; transform: scale(0.98);}
         
         .info-text { margin: 0 0 5px 0; color: #666; font-size: 14px; font-weight: bold; display: none; }
@@ -355,9 +356,30 @@
         }
     }
 
+    // === 核心修改：繪製棋子與軌跡 ===
     function drawBoard(boardArray) {
         const boardDiv = document.getElementById('board');
-        boardDiv.querySelectorAll('.piece').forEach(e => e.remove());
+        // 清除舊的棋子與軌跡標記
+        boardDiv.querySelectorAll('.piece, .highlight').forEach(e => e.remove());
+
+        // 1. 繪製最後落子軌跡 (如果有歷史步數的話)
+        if (currentPath.length > 0) {
+            let lastMove = currentPath[currentPath.length - 1];
+            if (lastMove && lastMove.src !== undefined && lastMove.dst !== undefined) {
+                // 產生起點與終點的兩個標記
+                [lastMove.src, lastMove.dst].forEach(idx => {
+                    const x = idx % 9;
+                    const y = Math.floor(idx / 9);
+                    const hl = document.createElement('div');
+                    hl.className = 'highlight';
+                    hl.style.left = (20 + x * 35) + 'px';
+                    hl.style.top = (20 + y * 35) + 'px';
+                    boardDiv.appendChild(hl);
+                });
+            }
+        }
+
+        // 2. 繪製棋子
         for (let i = 0; i < 90; i++) {
             const pCode = boardArray[i];
             if (PIECE_MAP[pCode]) {
