@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 10.1 (無縫填縫版)</title>
+    <title>CBL 專業打譜器 10.2 (純向量無縫版)</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
@@ -26,7 +26,7 @@
             color: #333; font-weight: bold; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none;
         }
 
-        /* 象棋盤設計：加入翻轉動畫 */
+        /* 象棋盤主體 */
         #board {
             position: relative; width: 320px; height: 355px;
             background: #e3c18b; margin: 10px auto;
@@ -35,38 +35,17 @@
         }
         #board.flipped { transform: rotate(180deg); }
 
-        /* 徹底解決 Safari 右側/底部邊線消失的 Bug */
-        .grid-lines {
-            position: absolute; top: 20px; left: 20px; 
-            width: 280px; height: 315px; 
-            background-image: repeating-linear-gradient(#555 0 1px, transparent 1px 100%), repeating-linear-gradient(90deg, #555 0 1px, transparent 1px 100%);
-            background-size: 35px 35px; z-index: 0;
-            border-right: 1px solid #555;
-            border-bottom: 1px solid #555;
-            box-sizing: content-box;
-        }
-        
-        /* 九宮格斜線 */
-        .palace {
-            position: absolute; width: 70px; height: 70px; z-index: 0;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='70' height='70'><line x1='0' y1='0' x2='70' y2='70' stroke='%23555' stroke-width='1'/><line x1='70' y1='0' x2='0' y2='70' stroke='%23555' stroke-width='1'/></svg>");
-        }
-        .palace-top { left: 125px; top: 20px; }
-        .palace-bottom { left: 125px; top: 265px; }
-
-        /* === 核心修復：楚河漢界物理防線，徹底阻斷 1px 漏縫 === */
+        /* === 核心修復：楚河漢界文字區塊 === 
+           移除所有的背景與邊框，讓純淨的 SVG 網格來呈現，徹底杜絕漏縫 */
         .river {
-            position: absolute; 
-            top: 160px; left: 21px; 
-            width: 279px; height: 36px;
-            background: #e3c18b; z-index: 1; 
-            border-top: 1px solid #555;
-            border-bottom: 1px solid #555;
-            box-sizing: border-box;
+            position: absolute; top: 160px; left: 20px; width: 280px; height: 35px;
             display: flex; justify-content: space-around; align-items: center;
             font-family: "Microsoft JhengHei", "微軟正黑體", 'MyChessFont', "PingFang TC", sans-serif;
-            font-size: 22px; color: #555;
+            font-size: 22px; color: #555; pointer-events: none; /* 防止干擾點擊 */
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        /* 翻轉棋盤時，文字會自動轉正 */
+        #board.flipped .river { transform: rotate(-180deg); }
         
         /* === 棋子基礎設計 === */
         .piece {
@@ -88,7 +67,7 @@
         .piece.red { color: #cc0000; border-color: #cc0000; }
         .piece.black { color: #000000; border-color: #000000; }
 
-        /* 移動標記點 */
+        /* === 移動標記點 === */
         .start-marker {
             position: absolute; width: 8px; height: 8px; background-color: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 4;
         }
@@ -137,9 +116,22 @@
     <p id="progressInfo" class="info-text"></p>
 
     <div id="board">
-        <div class="grid-lines"></div>
-        <div class="palace palace-top"></div>
-        <div class="palace palace-bottom"></div>
+        <!-- === 核心替換：純 SVG 向量座標網格 === -->
+        <svg width="280" height="315" style="position:absolute; top:20px; left:20px; z-index:0; overflow:visible;">
+            <g shape-rendering="crispEdges">
+                <!-- 網格邊框 -->
+                <rect x="0" y="0" width="280" height="315" fill="none" stroke="#555" stroke-width="1" />
+                <!-- 橫線 -->
+                <path d="M0 35 h280 M0 70 h280 M0 105 h280 M0 140 h280 M0 175 h280 M0 210 h280 M0 245 h280 M0 280 h280" fill="none" stroke="#555" stroke-width="1"/>
+                <!-- 直線 (上半部) -->
+                <path d="M35 0 v140 M70 0 v140 M105 0 v140 M140 0 v140 M175 0 v140 M210 0 v140 M245 0 v140" fill="none" stroke="#555" stroke-width="1"/>
+                <!-- 直線 (下半部) -->
+                <path d="M35 175 v140 M70 175 v140 M105 175 v140 M140 175 v140 M175 175 v140 M210 175 v140 M245 175 v140" fill="none" stroke="#555" stroke-width="1"/>
+            </g>
+            <!-- 九宮格斜線 (保持平滑，不使用 crispEdges) -->
+            <path d="M105 0 L175 70 M175 0 L105 70 M105 245 L175 315 M175 245 L105 315" fill="none" stroke="#555" stroke-width="1"/>
+        </svg>
+
         <div class="river"><span>楚河</span><span>漢界</span></div>
     </div>
 
