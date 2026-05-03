@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 10.2 (純向量無縫版)</title>
+    <title>CBL 專業打譜器 10.3 (防抖動終極版)</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
@@ -35,16 +35,24 @@
         }
         #board.flipped { transform: rotate(180deg); }
 
-        /* === 核心修復：楚河漢界文字區塊 === 
-           移除所有的背景與邊框，讓純淨的 SVG 網格來呈現，徹底杜絕漏縫 */
+        /* === 核心修復：防止 SVG 抖動的 GPU 加速設定 === */
+        .svg-grid {
+            position: absolute; top: 20px; left: 20px; z-index: 0; overflow: visible;
+            /* 將 SVG 獨立成一個複合層，避免棋子動畫影響其重繪 */
+            transform: translateZ(0); 
+            will-change: transform;
+            backface-visibility: hidden;
+            pointer-events: none; /* 防止干擾點擊 */
+        }
+
+        /* 楚河漢界文字區塊 */
         .river {
             position: absolute; top: 160px; left: 20px; width: 280px; height: 35px;
             display: flex; justify-content: space-around; align-items: center;
             font-family: "Microsoft JhengHei", "微軟正黑體", 'MyChessFont', "PingFang TC", sans-serif;
-            font-size: 22px; color: #555; pointer-events: none; /* 防止干擾點擊 */
+            font-size: 22px; color: #555; pointer-events: none; 
             transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* 翻轉棋盤時，文字會自動轉正 */
         #board.flipped .river { transform: rotate(-180deg); }
         
         /* === 棋子基礎設計 === */
@@ -116,9 +124,10 @@
     <p id="progressInfo" class="info-text"></p>
 
     <div id="board">
-        <!-- === 核心替換：純 SVG 向量座標網格 === -->
-        <svg width="280" height="315" style="position:absolute; top:20px; left:20px; z-index:0; overflow:visible;">
-            <g shape-rendering="crispEdges">
+        <!-- === SVG 向量座標網格：加入 GPU 防抖動 class === -->
+        <svg class="svg-grid" width="280" height="315">
+            <!-- 移除 crispEdges 以防止 Chrome 錯誤渲染粗細 -->
+            <g>
                 <!-- 網格邊框 -->
                 <rect x="0" y="0" width="280" height="315" fill="none" stroke="#555" stroke-width="1" />
                 <!-- 橫線 -->
@@ -128,7 +137,7 @@
                 <!-- 直線 (下半部) -->
                 <path d="M35 175 v140 M70 175 v140 M105 175 v140 M140 175 v140 M175 175 v140 M210 175 v140 M245 175 v140" fill="none" stroke="#555" stroke-width="1"/>
             </g>
-            <!-- 九宮格斜線 (保持平滑，不使用 crispEdges) -->
+            <!-- 九宮格斜線 -->
             <path d="M105 0 L175 70 M175 0 L105 70 M105 245 L175 315 M175 245 L105 315" fill="none" stroke="#555" stroke-width="1"/>
         </svg>
 
