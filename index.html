@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.9 (智慧適配版)</title>
+    <title>CBL 專業打譜器 10.0 (旗艦完美版)</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
@@ -35,10 +35,16 @@
         }
         #board.flipped { transform: rotate(180deg); }
 
+        /* === 核心修復：徹底解決 Safari 右側/底部邊線消失的 Bug === */
         .grid-lines {
-            position: absolute; top: 20px; left: 20px; width: 281px; height: 316px;
+            position: absolute; top: 20px; left: 20px; 
+            width: 280px; height: 315px; /* 精準調整為 35 的倍數 */
             background-image: repeating-linear-gradient(#555 0 1px, transparent 1px 100%), repeating-linear-gradient(90deg, #555 0 1px, transparent 1px 100%);
             background-size: 35px 35px; z-index: 0;
+            /* 強制加上右邊與下邊的實體邊框，無視 Safari 縮放渲染誤差 */
+            border-right: 1px solid #555;
+            border-bottom: 1px solid #555;
+            box-sizing: content-box;
         }
         
         /* 九宮格斜線 */
@@ -71,7 +77,6 @@
             font-family: "Microsoft JhengHei", "微軟正黑體", 'MyChessFont', "PingFang TC", sans-serif;
             transform: translate(-50%, -50%); 
             box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
-            /* 預設的緩動，用於打譜拖曳或重繪 */
             transition: left 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), top 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.6s;
         }
         #board.flipped .piece { transform: translate(-50%, -50%) rotate(-180deg); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); }
@@ -80,49 +85,18 @@
 
         /* === 移動標記點 === */
         .start-marker {
-            position: absolute;
-            width: 8px; height: 8px;
-            background-color: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 4;
+            position: absolute; width: 8px; height: 8px; background-color: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 4;
         }
-        
-        /* === 終點淡藍色光環 === */
+        /* 終點淡藍色光環 */
         .end-marker {
-            position: absolute;
-            width: 38px; height: 38px; 
-            border: 2px solid rgba(24, 144, 255, 0.65); 
-            background-color: rgba(24, 144, 255, 0.15); 
-            border-radius: 50%; 
-            transform: translate(-50%, -50%);
-            z-index: 4; 
-            box-sizing: border-box;
+            position: absolute; width: 38px; height: 38px; border: 2px solid rgba(24, 144, 255, 0.65); background-color: rgba(24, 144, 255, 0.15); border-radius: 50%; transform: translate(-50%, -50%); z-index: 4; box-sizing: border-box;
         }
 
-        /* === 核心動畫：跳躍與頓挫特效 === */
-        @keyframes jumpMove {
-            0%   { transform: translate(-50%, -50%) scale(1); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); }
-            50%  { transform: translate(-50%, -50%) scale(1.15); box-shadow: 4px 8px 10px rgba(0,0,0,0.4); }
-            100% { transform: translate(-50%, -50%) scale(1); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); }
-        }
-        @keyframes jumpMoveFlipped {
-            0%   { transform: translate(-50%, -50%) rotate(-180deg) scale(1); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); }
-            50%  { transform: translate(-50%, -50%) rotate(-180deg) scale(1.15); box-shadow: -4px -8px 10px rgba(0,0,0,0.4); }
-            100% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); }
-        }
-        @keyframes pieceLand {
-            0%   { transform: translate(-50%, -50%) scale(1.15); }
-            40%  { transform: translate(-50%, -50%) scale(0.9); }
-            100% { transform: translate(-50%, -50%) scale(1); }
-        }
-        @keyframes pieceLandFlipped {
-            0%   { transform: translate(-50%, -50%) rotate(-180deg) scale(1.15); }
-            40%  { transform: translate(-50%, -50%) rotate(-180deg) scale(0.9); }
-            100% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); }
-        }
+        /* === 核心動畫 === */
+        @keyframes jumpMove { 0% { transform: translate(-50%, -50%) scale(1); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); } 50% { transform: translate(-50%, -50%) scale(1.15); box-shadow: 4px 8px 10px rgba(0,0,0,0.4); } 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); } }
+        @keyframes jumpMoveFlipped { 0% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); } 50% { transform: translate(-50%, -50%) rotate(-180deg) scale(1.15); box-shadow: -4px -8px 10px rgba(0,0,0,0.4); } 100% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); } }
+        @keyframes pieceLand { 0% { transform: translate(-50%, -50%) scale(1.15); } 40% { transform: translate(-50%, -50%) scale(0.9); } 100% { transform: translate(-50%, -50%) scale(1); } }
+        @keyframes pieceLandFlipped { 0% { transform: translate(-50%, -50%) rotate(-180deg) scale(1.15); } 40% { transform: translate(-50%, -50%) rotate(-180deg) scale(0.9); } 100% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); } }
 
         .piece.jumping { animation: jumpMove 0.25s ease-in-out; z-index: 100 !important; }
         #board.flipped .piece.jumping { animation: jumpMoveFlipped 0.25s ease-in-out; }
@@ -142,6 +116,18 @@
         .tool-btn { padding: 5px 2px; background: #f0f2f5; color: #333; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; flex: 1; text-align: center; white-space: nowrap; }
         .tool-btn:active { background: #e4e6e9; transform: scale(0.98);}
         .info-text { margin: 0 0 5px 0; color: #666; font-size: 14px; font-weight: bold; display: none; }
+
+        /* === 核心修復：純淨 CSS 高度安全縮放 === */
+        /* 1. 預設 (手機/小螢幕)：維持原大小，保證不跑版。 */
+        /* 2. 平板直式 (空間極度充足時)：才允許放大 1.35 倍 */
+        @media screen and (min-width: 700px) and (min-height: 980px) {
+            body { zoom: 1.35; }
+        }
+        /* 3. 平板橫式 / 筆記型電腦 (高度一般)：微微放大 1.15 倍 */
+        @media screen and (min-width: 700px) and (min-height: 750px) and (max-height: 979px) {
+            body { zoom: 1.15; }
+        }
+        /* (注意：完全捨棄 JS 強制計算，把控制權交回給瀏覽器原生引擎) */
     </style>
 </head>
 <body>
@@ -177,30 +163,6 @@
     </div>
 
 <script>
-    // === 智慧縮放引擎 (自動適配手機、平板、電腦) ===
-    function adjustScale() {
-        let winW = window.innerWidth;
-        let winH = window.innerHeight;
-        
-        // 設定 App 在畫面上需要的基礎安全寬高
-        let scaleX = winW / 360;
-        let scaleY = winH / 730; 
-        
-        // 取兩者中較小的比例，確保完整顯示不需捲動
-        let idealScale = Math.min(scaleX, scaleY);
-        
-        // 限制最大縮放倍率，防止在大螢幕上變得太巨大 (原 1.7 改為舒適的 1.35)
-        if (idealScale > 1.35) idealScale = 1.35;
-        // 限制最小縮放，維持原本在手機上的優良比例
-        if (idealScale < 1) idealScale = 1;
-        
-        document.body.style.zoom = idealScale;
-    }
-    // 監聽視窗大小改變與螢幕旋轉
-    window.addEventListener('resize', adjustScale);
-    window.addEventListener('orientationchange', adjustScale);
-    adjustScale(); // 網頁載入時立刻執行一次
-
     const CBR_MAGIC = [67, 67, 66, 114, 105, 100, 103, 101, 32, 82, 101, 99, 111, 114, 100];
     const PIECE_MAP = {
         0x11: { text: '俥', cls: 'red', fen: 'R' }, 0x12: { text: '傌', cls: 'red', fen: 'N' }, 0x13: { text: '相', cls: 'red', fen: 'B' }, 0x14: { text: '仕', cls: 'red', fen: 'A' }, 0x15: { text: '帥', cls: 'red', fen: 'K' }, 0x16: { text: '炮', cls: 'red', fen: 'C' }, 0x17: { text: '兵', cls: 'red', fen: 'P' },
