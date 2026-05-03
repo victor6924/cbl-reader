@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 10.0 (旗艦完美版)</title>
+    <title>CBL 專業打譜器 10.1 (無縫填縫版)</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
@@ -35,13 +35,12 @@
         }
         #board.flipped { transform: rotate(180deg); }
 
-        /* === 核心修復：徹底解決 Safari 右側/底部邊線消失的 Bug === */
+        /* 徹底解決 Safari 右側/底部邊線消失的 Bug */
         .grid-lines {
             position: absolute; top: 20px; left: 20px; 
-            width: 280px; height: 315px; /* 精準調整為 35 的倍數 */
+            width: 280px; height: 315px; 
             background-image: repeating-linear-gradient(#555 0 1px, transparent 1px 100%), repeating-linear-gradient(90deg, #555 0 1px, transparent 1px 100%);
             background-size: 35px 35px; z-index: 0;
-            /* 強制加上右邊與下邊的實體邊框，無視 Safari 縮放渲染誤差 */
             border-right: 1px solid #555;
             border-bottom: 1px solid #555;
             box-sizing: content-box;
@@ -55,10 +54,16 @@
         .palace-top { left: 125px; top: 20px; }
         .palace-bottom { left: 125px; top: 265px; }
 
-        /* 楚河漢界 */
+        /* === 核心修復：楚河漢界物理防線，徹底阻斷 1px 漏縫 === */
         .river {
-            position: absolute; top: 161px; left: 21px; width: 279px; height: 33px;
-            background: #e3c18b; z-index: 1; display: flex; justify-content: space-around; align-items: center;
+            position: absolute; 
+            top: 160px; left: 21px; 
+            width: 279px; height: 36px;
+            background: #e3c18b; z-index: 1; 
+            border-top: 1px solid #555;
+            border-bottom: 1px solid #555;
+            box-sizing: border-box;
+            display: flex; justify-content: space-around; align-items: center;
             font-family: "Microsoft JhengHei", "微軟正黑體", 'MyChessFont', "PingFang TC", sans-serif;
             font-size: 22px; color: #555;
         }
@@ -83,7 +88,7 @@
         .piece.red { color: #cc0000; border-color: #cc0000; }
         .piece.black { color: #000000; border-color: #000000; }
 
-        /* === 移動標記點 === */
+        /* 移動標記點 */
         .start-marker {
             position: absolute; width: 8px; height: 8px; background-color: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 4;
         }
@@ -92,7 +97,7 @@
             position: absolute; width: 38px; height: 38px; border: 2px solid rgba(24, 144, 255, 0.65); background-color: rgba(24, 144, 255, 0.15); border-radius: 50%; transform: translate(-50%, -50%); z-index: 4; box-sizing: border-box;
         }
 
-        /* === 核心動畫 === */
+        /* 核心動畫 */
         @keyframes jumpMove { 0% { transform: translate(-50%, -50%) scale(1); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); } 50% { transform: translate(-50%, -50%) scale(1.15); box-shadow: 4px 8px 10px rgba(0,0,0,0.4); } 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); } }
         @keyframes jumpMoveFlipped { 0% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); } 50% { transform: translate(-50%, -50%) rotate(-180deg) scale(1.15); box-shadow: -4px -8px 10px rgba(0,0,0,0.4); } 100% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); } }
         @keyframes pieceLand { 0% { transform: translate(-50%, -50%) scale(1.15); } 40% { transform: translate(-50%, -50%) scale(0.9); } 100% { transform: translate(-50%, -50%) scale(1); } }
@@ -117,17 +122,9 @@
         .tool-btn:active { background: #e4e6e9; transform: scale(0.98);}
         .info-text { margin: 0 0 5px 0; color: #666; font-size: 14px; font-weight: bold; display: none; }
 
-        /* === 核心修復：純淨 CSS 高度安全縮放 === */
-        /* 1. 預設 (手機/小螢幕)：維持原大小，保證不跑版。 */
-        /* 2. 平板直式 (空間極度充足時)：才允許放大 1.35 倍 */
-        @media screen and (min-width: 700px) and (min-height: 980px) {
-            body { zoom: 1.35; }
-        }
-        /* 3. 平板橫式 / 筆記型電腦 (高度一般)：微微放大 1.15 倍 */
-        @media screen and (min-width: 700px) and (min-height: 750px) and (max-height: 979px) {
-            body { zoom: 1.15; }
-        }
-        /* (注意：完全捨棄 JS 強制計算，把控制權交回給瀏覽器原生引擎) */
+        /* 純淨 CSS 高度安全縮放 */
+        @media screen and (min-width: 700px) and (min-height: 980px) { body { zoom: 1.35; } }
+        @media screen and (min-width: 700px) and (min-height: 750px) and (max-height: 979px) { body { zoom: 1.15; } }
     </style>
 </head>
 <body>
