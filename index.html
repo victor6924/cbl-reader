@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 10.3 (防抖動終極版)</title>
+    <title>CBL 專業打譜器 10.3 (防截斷智適應版)</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
@@ -14,7 +14,8 @@
             font-display: swap;
         }
 
-        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; text-align: center; background: #f4f6f8; margin: 0; padding: 10px; }
+        /* 增加底部 padding，確保縮放時下方有足夠的呼吸空間 */
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; text-align: center; background: #f4f6f8; margin: 0; padding: 10px 10px 25px 10px; }
         h3 { color: #333; margin: 5px 0; font-size: 18px; }
         
         .file-upload { margin: 5px auto 10px auto; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 340px; }
@@ -35,14 +36,10 @@
         }
         #board.flipped { transform: rotate(180deg); }
 
-        /* === 核心修復：防止 SVG 抖動的 GPU 加速設定 === */
+        /* 防抖動 GPU 向量網格 */
         .svg-grid {
             position: absolute; top: 20px; left: 20px; z-index: 0; overflow: visible;
-            /* 將 SVG 獨立成一個複合層，避免棋子動畫影響其重繪 */
-            transform: translateZ(0); 
-            will-change: transform;
-            backface-visibility: hidden;
-            pointer-events: none; /* 防止干擾點擊 */
+            transform: translateZ(0); will-change: transform; backface-visibility: hidden; pointer-events: none; 
         }
 
         /* 楚河漢界文字區塊 */
@@ -55,36 +52,23 @@
         }
         #board.flipped .river { transform: rotate(-180deg); }
         
-        /* === 棋子基礎設計 === */
+        /* 棋子基礎設計 */
         .piece {
-            position: absolute; 
-            width: 30px; height: 30px; 
-            border-radius: 50%;
-            background: #ffebc2; 
-            border: 2px solid; 
-            text-align: center; 
-            line-height: 30px; 
-            font-weight: bold; 
-            font-size: 22px; 
+            position: absolute; width: 30px; height: 30px; border-radius: 50%; background: #ffebc2; border: 2px solid; 
+            text-align: center; line-height: 30px; font-weight: bold; font-size: 22px; 
             font-family: "Microsoft JhengHei", "微軟正黑體", 'MyChessFont', "PingFang TC", sans-serif;
-            transform: translate(-50%, -50%); 
-            box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
+            transform: translate(-50%, -50%); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); z-index: 10;
             transition: left 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), top 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.6s;
         }
         #board.flipped .piece { transform: translate(-50%, -50%) rotate(-180deg); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); }
         .piece.red { color: #cc0000; border-color: #cc0000; }
         .piece.black { color: #000000; border-color: #000000; }
 
-        /* === 移動標記點 === */
-        .start-marker {
-            position: absolute; width: 8px; height: 8px; background-color: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 4;
-        }
-        /* 終點淡藍色光環 */
-        .end-marker {
-            position: absolute; width: 38px; height: 38px; border: 2px solid rgba(24, 144, 255, 0.65); background-color: rgba(24, 144, 255, 0.15); border-radius: 50%; transform: translate(-50%, -50%); z-index: 4; box-sizing: border-box;
-        }
+        /* 移動標記與光環 */
+        .start-marker { position: absolute; width: 8px; height: 8px; background-color: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 4; }
+        .end-marker { position: absolute; width: 38px; height: 38px; border: 2px solid rgba(24, 144, 255, 0.65); background-color: rgba(24, 144, 255, 0.15); border-radius: 50%; transform: translate(-50%, -50%); z-index: 4; box-sizing: border-box; }
 
-        /* 核心動畫 */
+        /* 動畫 */
         @keyframes jumpMove { 0% { transform: translate(-50%, -50%) scale(1); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); } 50% { transform: translate(-50%, -50%) scale(1.15); box-shadow: 4px 8px 10px rgba(0,0,0,0.4); } 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 1px 2px 3px rgba(0,0,0,0.4); } }
         @keyframes jumpMoveFlipped { 0% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); } 50% { transform: translate(-50%, -50%) rotate(-180deg) scale(1.15); box-shadow: -4px -8px 10px rgba(0,0,0,0.4); } 100% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); box-shadow: -1px -2px 3px rgba(0,0,0,0.4); } }
         @keyframes pieceLand { 0% { transform: translate(-50%, -50%) scale(1.15); } 40% { transform: translate(-50%, -50%) scale(0.9); } 100% { transform: translate(-50%, -50%) scale(1); } }
@@ -108,10 +92,6 @@
         .tool-btn { padding: 5px 2px; background: #f0f2f5; color: #333; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; flex: 1; text-align: center; white-space: nowrap; }
         .tool-btn:active { background: #e4e6e9; transform: scale(0.98);}
         .info-text { margin: 0 0 5px 0; color: #666; font-size: 14px; font-weight: bold; display: none; }
-
-        /* 純淨 CSS 高度安全縮放 */
-        @media screen and (min-width: 700px) and (min-height: 980px) { body { zoom: 1.35; } }
-        @media screen and (min-width: 700px) and (min-height: 750px) and (max-height: 979px) { body { zoom: 1.15; } }
     </style>
 </head>
 <body>
@@ -124,20 +104,13 @@
     <p id="progressInfo" class="info-text"></p>
 
     <div id="board">
-        <!-- === SVG 向量座標網格：加入 GPU 防抖動 class === -->
         <svg class="svg-grid" width="280" height="315">
-            <!-- 移除 crispEdges 以防止 Chrome 錯誤渲染粗細 -->
             <g>
-                <!-- 網格邊框 -->
                 <rect x="0" y="0" width="280" height="315" fill="none" stroke="#555" stroke-width="1" />
-                <!-- 橫線 -->
                 <path d="M0 35 h280 M0 70 h280 M0 105 h280 M0 140 h280 M0 175 h280 M0 210 h280 M0 245 h280 M0 280 h280" fill="none" stroke="#555" stroke-width="1"/>
-                <!-- 直線 (上半部) -->
                 <path d="M35 0 v140 M70 0 v140 M105 0 v140 M140 0 v140 M175 0 v140 M210 0 v140 M245 0 v140" fill="none" stroke="#555" stroke-width="1"/>
-                <!-- 直線 (下半部) -->
                 <path d="M35 175 v140 M70 175 v140 M105 175 v140 M140 175 v140 M175 175 v140 M210 175 v140 M245 175 v140" fill="none" stroke="#555" stroke-width="1"/>
             </g>
-            <!-- 九宮格斜線 -->
             <path d="M105 0 L175 70 M175 0 L105 70 M105 245 L175 315 M175 245 L105 315" fill="none" stroke="#555" stroke-width="1"/>
         </svg>
 
@@ -161,6 +134,33 @@
     </div>
 
 <script>
+    // === 全平台終極智適應引擎 (自動測量並縮放，不依賴瀏覽器判斷) ===
+    function autoScaleApp() {
+        let winW = window.innerWidth;
+        let winH = window.innerHeight;
+        
+        // 設定 App 完整顯示所需的安全寬度與高度估值
+        let safeWidth = 360; 
+        let safeHeight = 770; 
+
+        // 分別計算寬度與高度的縮放比例
+        let scaleX = winW / safeWidth;
+        let scaleY = winH / safeHeight;
+
+        // 取兩者中較小的比例，確保畫面絕對不會被截斷
+        let finalScale = Math.min(scaleX, scaleY);
+
+        // 限制縮放極限
+        if (finalScale > 1.35) finalScale = 1.35; // 平板/電腦不過度放大
+        if (finalScale < 0.75) finalScale = 0.75; // 手機過矮時允許縮小至 75% 確保塞入按鈕
+
+        document.body.style.zoom = finalScale;
+    }
+    // 綁定視窗變化與翻轉事件
+    window.addEventListener('resize', autoScaleApp);
+    window.addEventListener('orientationchange', autoScaleApp);
+    autoScaleApp(); // 網頁載入時立即執行
+
     const CBR_MAGIC = [67, 67, 66, 114, 105, 100, 103, 101, 32, 82, 101, 99, 111, 114, 100];
     const PIECE_MAP = {
         0x11: { text: '俥', cls: 'red', fen: 'R' }, 0x12: { text: '傌', cls: 'red', fen: 'N' }, 0x13: { text: '相', cls: 'red', fen: 'B' }, 0x14: { text: '仕', cls: 'red', fen: 'A' }, 0x15: { text: '帥', cls: 'red', fen: 'K' }, 0x16: { text: '炮', cls: 'red', fen: 'C' }, 0x17: { text: '兵', cls: 'red', fen: 'P' },
