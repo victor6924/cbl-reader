@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.8 (全平台適配版)</title>
+    <title>CBL 專業打譜器 9.9 (智慧適配版)</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
@@ -124,17 +124,9 @@
             100% { transform: translate(-50%, -50%) rotate(-180deg) scale(1); }
         }
 
-        /* 觸發跳躍時加上此 Class */
-        .piece.jumping {
-            animation: jumpMove 0.25s ease-in-out;
-            z-index: 100 !important;
-        }
+        .piece.jumping { animation: jumpMove 0.25s ease-in-out; z-index: 100 !important; }
         #board.flipped .piece.jumping { animation: jumpMoveFlipped 0.25s ease-in-out; }
-        
-        /* 觸發吃子落地時加上此 Class */
-        .piece.landing {
-            animation: pieceLand 0.15s ease-out;
-        }
+        .piece.landing { animation: pieceLand 0.15s ease-out; }
         #board.flipped .piece.landing { animation: pieceLandFlipped 0.15s ease-out; }
 
         /* UI 排版區 */
@@ -150,16 +142,6 @@
         .tool-btn { padding: 5px 2px; background: #f0f2f5; color: #333; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; flex: 1; text-align: center; white-space: nowrap; }
         .tool-btn:active { background: #e4e6e9; transform: scale(0.98);}
         .info-text { margin: 0 0 5px 0; color: #666; font-size: 14px; font-weight: bold; display: none; }
-
-        /* === 新增：響應式自動縮放 (平板與電腦適配) === */
-        @media screen and (min-width: 768px) and (max-width: 1023px) {
-            /* 針對平板 (如 iPad) 放大 1.5 倍 */
-            body { zoom: 1.5; }
-        }
-        @media screen and (min-width: 1024px) {
-            /* 針對電腦螢幕放大 1.7 倍 */
-            body { zoom: 1.7; }
-        }
     </style>
 </head>
 <body>
@@ -195,6 +177,30 @@
     </div>
 
 <script>
+    // === 智慧縮放引擎 (自動適配手機、平板、電腦) ===
+    function adjustScale() {
+        let winW = window.innerWidth;
+        let winH = window.innerHeight;
+        
+        // 設定 App 在畫面上需要的基礎安全寬高
+        let scaleX = winW / 360;
+        let scaleY = winH / 730; 
+        
+        // 取兩者中較小的比例，確保完整顯示不需捲動
+        let idealScale = Math.min(scaleX, scaleY);
+        
+        // 限制最大縮放倍率，防止在大螢幕上變得太巨大 (原 1.7 改為舒適的 1.35)
+        if (idealScale > 1.35) idealScale = 1.35;
+        // 限制最小縮放，維持原本在手機上的優良比例
+        if (idealScale < 1) idealScale = 1;
+        
+        document.body.style.zoom = idealScale;
+    }
+    // 監聽視窗大小改變與螢幕旋轉
+    window.addEventListener('resize', adjustScale);
+    window.addEventListener('orientationchange', adjustScale);
+    adjustScale(); // 網頁載入時立刻執行一次
+
     const CBR_MAGIC = [67, 67, 66, 114, 105, 100, 103, 101, 32, 82, 101, 99, 111, 114, 100];
     const PIECE_MAP = {
         0x11: { text: '俥', cls: 'red', fen: 'R' }, 0x12: { text: '傌', cls: 'red', fen: 'N' }, 0x13: { text: '相', cls: 'red', fen: 'B' }, 0x14: { text: '仕', cls: 'red', fen: 'A' }, 0x15: { text: '帥', cls: 'red', fen: 'K' }, 0x16: { text: '炮', cls: 'red', fen: 'C' }, 0x17: { text: '兵', cls: 'red', fen: 'P' },
@@ -211,7 +217,7 @@
     let currentBoardState = new Uint8Array(90); 
     let gameTreeRoot = { children: [], comment: "" };
     let currentPath = []; 
-    let isAnimating = false; // 狀態鎖：防止動畫中連續點擊
+    let isAnimating = false; 
 
     window.onload = () => {
         const params = new URLSearchParams(window.location.search);
@@ -374,7 +380,6 @@
         return root;
     }
 
-    // === 動態走子引擎 ===
     function doMoveAnimation(src, dst, isCapture, callback) {
         const boardDiv = document.getElementById('board');
         const srcX = src % 9; const srcY = Math.floor(src / 9);
@@ -383,7 +388,6 @@
         let movingPiece = null;
         let targetPiece = null;
 
-        // 找出被移動與被吃的棋子 DOM 元件
         boardDiv.querySelectorAll('.piece').forEach(p => {
             const px = parseInt(p.style.left);
             const py = parseInt(p.style.top);
@@ -393,32 +397,26 @@
 
         if (!movingPiece) { callback(); return; }
 
-        // 1. 動畫瞬間產生起始位置的小白點
         const startMarker = document.createElement('div');
         startMarker.className = 'start-marker';
         startMarker.style.left = (20 + srcX * 35) + 'px';
         startMarker.style.top = (20 + srcY * 35) + 'px';
         boardDiv.appendChild(startMarker);
 
-        // 2. 觸發跳躍動畫
         movingPiece.classList.add('jumping');
         movingPiece.style.left = (20 + dstX * 35) + 'px';
         movingPiece.style.top = (20 + dstY * 35) + 'px';
 
-        // 3. 處理吃子特效
         if (isCapture && targetPiece) {
             setTimeout(() => {
                 const isFlipped = boardDiv.classList.contains('flipped');
                 targetPiece.style.transform = isFlipped ? 'translate(-50%, -50%) rotate(-180deg) scale(0)' : 'translate(-50%, -50%) scale(0)';
                 targetPiece.style.opacity = '0';
                 targetPiece.style.transition = 'all 0.1s';
-                
-                // 攻擊方落地頓挫感
                 movingPiece.classList.add('landing');
-            }, 125); // 動畫進行到一半時觸發
+            }, 125); 
         }
 
-        // 4. 動畫結束後復原狀態並執行回呼
         setTimeout(() => {
             movingPiece.classList.remove('jumping', 'landing');
             callback();
@@ -468,12 +466,10 @@
         }
     }
 
-    // === 繪製棋盤與靜態標記 ===
     function drawBoard(boardArray) {
         const boardDiv = document.getElementById('board');
         boardDiv.querySelectorAll('.piece, .start-marker, .end-marker').forEach(e => e.remove());
 
-        // 繪製軌跡標記 (放在棋子下方)
         if (currentPath.length > 0) {
             let lastMove = currentPath[currentPath.length - 1];
             if (lastMove && lastMove.src !== undefined && lastMove.dst !== undefined) {
@@ -582,13 +578,11 @@
     document.getElementById('prevBtn').addEventListener('click', () => { if (currentGameIndex > 0) loadGame(currentGameIndex - 1); });
     document.getElementById('nextBtn').addEventListener('click', () => { if (currentGameIndex < gameOffsets.length - 1) loadGame(currentGameIndex + 1); });
     
-    // 退回上一步 (保持原來的快速重置)
     document.getElementById('prevMoveBtn').addEventListener('click', () => { 
         if (isAnimating) return;
         if (currentPath.length > 0) { currentPath.pop(); updateBoardState(); } 
     });
 
-    // 動態下一步
     document.getElementById('nextMoveBtn').addEventListener('click', () => {
         if (isAnimating) return;
         let currentNode = currentPath.length > 0 ? currentPath[currentPath.length - 1] : gameTreeRoot;
