@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CBL 專業打譜器 9.7 (光環標記版)</title>
+    <title>CBL 專業打譜器 9.8 (全平台適配版)</title>
     <style>
         /* === 載入專屬的超輕量客製化字體 === */
         @font-face {
@@ -90,15 +90,15 @@
             z-index: 4;
         }
         
-        /* === 核心修改：終點淡藍色光環 === */
+        /* === 終點淡藍色光環 === */
         .end-marker {
             position: absolute;
-            width: 38px; height: 38px; /* 比棋子稍微大一圈 */
-            border: 2px solid rgba(24, 144, 255, 0.65); /* 淡藍色實線 */
-            background-color: rgba(24, 144, 255, 0.15); /* 微微的藍色光暈底 */
-            border-radius: 50%; /* 改為完美的圓形 */
+            width: 38px; height: 38px; 
+            border: 2px solid rgba(24, 144, 255, 0.65); 
+            background-color: rgba(24, 144, 255, 0.15); 
+            border-radius: 50%; 
             transform: translate(-50%, -50%);
-            z-index: 4; /* 墊在棋子下方 */
+            z-index: 4; 
             box-sizing: border-box;
         }
 
@@ -150,6 +150,16 @@
         .tool-btn { padding: 5px 2px; background: #f0f2f5; color: #333; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; flex: 1; text-align: center; white-space: nowrap; }
         .tool-btn:active { background: #e4e6e9; transform: scale(0.98);}
         .info-text { margin: 0 0 5px 0; color: #666; font-size: 14px; font-weight: bold; display: none; }
+
+        /* === 新增：響應式自動縮放 (平板與電腦適配) === */
+        @media screen and (min-width: 768px) and (max-width: 1023px) {
+            /* 針對平板 (如 iPad) 放大 1.5 倍 */
+            body { zoom: 1.5; }
+        }
+        @media screen and (min-width: 1024px) {
+            /* 針對電腦螢幕放大 1.7 倍 */
+            body { zoom: 1.7; }
+        }
     </style>
 </head>
 <body>
